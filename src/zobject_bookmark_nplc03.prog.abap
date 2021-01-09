@@ -1,19 +1,6 @@
 *&---------------------------------------------------------------------*
 *& Include          ZOBJECT_BOOKMARK_NPLC03
 *&---------------------------------------------------------------------*
-
-CLASS lcl_model DEFINITION.
-  PUBLIC SECTION.
-
-    CLASS-METHODS :
-      get_acc_table
-        IMPORTING i_usr        TYPE sy-uname
-        CHANGING  ct_acc_table TYPE gty_t_acc_table,
-      get_nodes
-        IMPORTING i_usr    TYPE sy-uname
-        CHANGING  ct_nodes TYPE gty_t_tree.
-
-ENDCLASS.
 CLASS lcl_model IMPLEMENTATION.
   METHOD get_nodes.
     "-----------------------------------------

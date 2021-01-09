@@ -2,74 +2,6 @@
 *& Include          ZOBJECT_BOOKMARK_NPLC02
 *&---------------------------------------------------------------------*
 
-CLASS lcl_controller DEFINITION.
-  PUBLIC SECTION.
-    CONSTANTS : mc_e TYPE c VALUE 'E',
-                mc_x TYPE c VALUE 'X'.
-    TYPES:
-      BEGIN OF mty_s_treeinfo,
-        fmkey TYPE fieldname,
-        fukey TYPE fieldname,
-        fname TYPE fieldname,
-        fsort TYPE fieldname,
-        fnode TYPE fieldname,
-      END OF mty_s_treeinfo .
-    METHODS :
-*    CALL METHOD go_control->fcat_0100_build(
-*      EXPORTING
-*        it_list1 = gt_list1
-*      CHANGING
-*        ct_fcat1 = gt_fcat1
-*    ).
-      tree_draw
-        IMPORTING
-          !is_fieldinfo TYPE mty_s_treeinfo
-        CHANGING
-          !co_tree      TYPE REF TO cl_gui_alv_tree
-          !ct_data      TYPE STANDARD TABLE
-          !ct_expand    TYPE lvc_t_nkey ,
-      tree_draw_image
-        IMPORTING
-          !it_data        TYPE STANDARD TABLE
-          !is_data        TYPE any
-          !is_fieldinfo   TYPE mty_s_treeinfo
-        CHANGING
-          !cs_node_layout TYPE lvc_s_layn
-          !c_isfolder     TYPE char01           ,
-      tree_draw_recursive
-        IMPORTING
-          !is_fieldinfo TYPE mty_s_treeinfo
-          !is_upper     TYPE any
-        EXPORTING
-          !e_err_chk    TYPE char01
-          !e_err_msg    TYPE char100
-        CHANGING
-          !co_tree      TYPE REF TO cl_gui_alv_tree
-          !ct_data      TYPE STANDARD TABLE
-          !ct_expand    TYPE STANDARD TABLE ,
-      grid_0100_display
-        CHANGING
-          co_tree1 TYPE REF TO cl_gui_alv_tree
-          ct_fcat1 TYPE lvc_t_fcat
-          ct_list1 TYPE gty_t_tree
-          ct_tree1 TYPE gty_t_tree
-        ,
-
-      fcat_0100_build
-        IMPORTING
-          it_list1 TYPE gty_t_tree
-        CHANGING
-          ct_fcat1 TYPE lvc_t_fcat,
-
-      create_0100_container
-        IMPORTING
-          i_dynnr  TYPE sy-dynnr
-          i_repid  TYPE sy-repid
-        CHANGING
-          co_tree1 TYPE REF TO cl_gui_alv_tree
-          co_grid1 TYPE REF TO cl_gui_alv_grid.
-
-ENDCLASS.
 CLASS lcl_controller IMPLEMENTATION.
   METHOD tree_draw_recursive.
     DATA : lr_data        TYPE REF TO data,
@@ -276,6 +208,7 @@ CLASS lcl_controller IMPLEMENTATION.
     CALL METHOD go_tree1->set_table_for_first_display   "일반 ALV의 경우 output table에 데이타를 채운후 이 Method를 호출하나
       EXPORTING                                           "ALV Tree의 경우 null인 상태의  output table을 넘겨주워 화면을 display시킨다.
         is_hierarchy_header = l_hierarchy_header          "일반ALV에 [첫번째Column]을 계층적으로 사용하기 위한 Header정보를 받는다.
+
       CHANGING
         it_outtab           = ct_list1 "반드시 테이블은 Global 변수로 선언되어있어야 하며, 빈상태어야 한다.
         it_fieldcatalog     = ct_fcat1.  "FieldCatalog 1줄이라도 채워주어야 한다.
@@ -386,10 +319,10 @@ CLASS lcl_controller IMPLEMENTATION.
 *          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'AMOUNT' CHANGING cs_fcat = ls_fcat ).
 
 
-        WHEN 'VMODE'.
-          ls_fcat-no_out   = gc_x.
-          ls_fcat-col_pos  = 0.
-          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'MODE' CHANGING cs_fcat = ls_fcat ).
+*        WHEN 'VMODE'.
+*          ls_fcat-no_out   = gc_x.
+*          ls_fcat-col_pos  = 0.
+*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'MODE' CHANGING cs_fcat = ls_fcat ).
 
 **######################################################################*
         WHEN OTHERS.
@@ -405,38 +338,5 @@ CLASS lcl_controller IMPLEMENTATION.
     ls_fcat-edit = ' '.
     MODIFY ct_fcat1 FROM ls_fcat TRANSPORTING edit WHERE fieldname CP '*_NM'.
   ENDMETHOD.
-  METHOD create_0100_container.
-    "-----------------------------------------
-    " Screen 100에 Container를 생성한다.
-    "-----------------------------------------
-    DATA : lo_dock  TYPE REF TO cl_gui_docking_container,
-           lo_left  TYPE REF TO cl_gui_container,
-           lo_right TYPE REF TO cl_gui_container,
-           lo_easy  TYPE REF TO cl_gui_easy_splitter_container.
-    CREATE OBJECT lo_dock
-      EXPORTING
-        dynnr     = i_dynnr
-        repid     = i_repid
-        side      = cl_gui_docking_container=>dock_at_top
-        extension = 6000.
 
-    CREATE OBJECT lo_easy
-      EXPORTING
-        parent        = lo_dock
-        orientation   = 1
-        sash_position = 30.
-
-    lo_left = lo_easy->top_left_container.
-    lo_right = lo_easy->bottom_right_container.
-
-
-    CREATE OBJECT co_tree1
-      EXPORTING
-        parent = lo_left.
-
-    CREATE OBJECT co_grid1
-      EXPORTING
-        i_parent = lo_right.
-
-  ENDMETHOD.
 ENDCLASS.

@@ -2,85 +2,192 @@
 *& Include          ZOBJECT_BOOKMARK_NPLC01
 *&---------------------------------------------------------------------*
 
-CLASS lcl_module     DEFINITION.
-  PUBLIC SECTION.
-    CONSTANTS mc_astr TYPE c VALUE '*' ##NO_TEXT.
-    CONSTANTS mc_i TYPE c VALUE 'I' ##NO_TEXT.
-    CONSTANTS mc_eq TYPE fieldname VALUE 'EQ' ##NO_TEXT.
-    CONSTANTS mc_ne TYPE fieldname VALUE 'NE' ##NO_TEXT.
-    CONSTANTS mc_gt TYPE fieldname VALUE 'GT' ##NO_TEXT.
-    CONSTANTS mc_ge TYPE fieldname VALUE 'GE' ##NO_TEXT.
-    CONSTANTS mc_lt TYPE fieldname VALUE 'LT' ##NO_TEXT.
-    CONSTANTS mc_le TYPE fieldname VALUE 'LE' ##NO_TEXT.
-    CONSTANTS mc_bt TYPE fieldname VALUE 'BT' ##NO_TEXT.
-    CONSTANTS mc_nb TYPE fieldname VALUE 'NB' ##NO_TEXT.
-    CONSTANTS mc_cp TYPE fieldname VALUE 'CP' ##NO_TEXT.
-    CONSTANTS mc_s TYPE c VALUE 'S' ##NO_TEXT.
-    CONSTANTS mc_left_brace TYPE c VALUE '(' ##NO_TEXT.
-    CONSTANTS mc_right_brace TYPE c VALUE ')' ##NO_TEXT.
-    CONSTANTS mc_tilde TYPE c VALUE '~' ##NO_TEXT.
-    CONSTANTS mc_text TYPE char04 VALUE 'TEXT' ##NO_TEXT.
-    CONSTANTS mc_char TYPE char04 VALUE 'CHAR' ##NO_TEXT.
-    CONSTANTS mc_c TYPE c VALUE 'C' ##NO_TEXT.
-    CONSTANTS mc_icon TYPE char04 VALUE 'ICON' ##NO_TEXT.
-    CONSTANTS mc_value TYPE char05 VALUE 'VALUE' ##NO_TEXT.
-    CONSTANTS mc_kind TYPE char04 VALUE 'KIND' ##NO_TEXT.
-    CONSTANTS mc_esc TYPE c VALUE '"' ##NO_TEXT.
-    CONSTANTS mc_enter TYPE char3 VALUE '/00' ##NO_TEXT.
-    CONSTANTS mc_x TYPE c VALUE 'X' ##NO_TEXT.
-    CONSTANTS mc_a TYPE c VALUE 'A' ##NO_TEXT.
-    CONSTANTS mc_h TYPE c VALUE 'H' ##NO_TEXT.
-    CONSTANTS mc_h_lower TYPE c VALUE 'h' ##NO_TEXT.
-    CONSTANTS mc_e TYPE c VALUE 'E' ##NO_TEXT.
-    CONSTANTS mc_p TYPE c VALUE 'P' ##NO_TEXT.
-
-    TYPES:
-      BEGIN OF gty_s_incl_common ,
-        vcolor   TYPE lvc_t_scol,
-        vcelltab TYPE lvc_t_styl,
-        vmode    TYPE char1,
-      END OF gty_s_incl_common .
-
-    CLASS-METHODS get_excl_buttons
-      RETURNING
-        VALUE(rt_excl) TYPE ui_functions .
-    CLASS-METHODS get_layout
-      IMPORTING
-        !it_tab          TYPE STANDARD TABLE
-      RETURNING
-        VALUE(rs_layout) TYPE lvc_s_layo .
-    CLASS-METHODS get_variant
-      IMPORTING
-        !i_name          TYPE c
-      RETURNING
-        VALUE(r_variant) TYPE repid .
-    CLASS-METHODS set_fcat_name
-      IMPORTING
-        !i_name  TYPE c
-      CHANGING
-        !cs_fcat TYPE lvc_s_fcat .
-
-    CLASS-METHODS get_fcat
-      IMPORTING
-        !is_fcat        TYPE lvc_s_fcat OPTIONAL
-        !iv_ddic_object TYPE any OPTIONAL
-        !is_data        TYPE any OPTIONAL
-        !it_data        TYPE ANY TABLE OPTIONAL
-        !ior_dref       TYPE data OPTIONAL
-      RETURNING
-        VALUE(rt_fcat)  TYPE lvc_t_fcat
-      EXCEPTIONS
-        no_structure
-        invalid_type .
-
-    CLASS-METHODS get_fields
-      IMPORTING
-        !i_struc         TYPE fieldname
-        !i_prefix        TYPE c OPTIONAL
-      RETURNING
-        VALUE(rt_fields) TYPE rstline .
-ENDCLASS.
 CLASS lcl_module     IMPLEMENTATION.
+  METHOD tree_add_contextmenu.
+    CHECK it_fcodes IS NOT INITIAL.
+
+    DATA : lo_event TYPE REF TO lcl_module.
+    CREATE OBJECT lo_event.
+
+    SET HANDLER lo_event->handle_tree_node_cm_req        "Context Menu Request
+            FOR co_tree.
+
+    SET HANDLER lo_event->handle_tree_item_cm_req        "Context Menu Request
+            FOR co_tree.
+
+    SET HANDLER lo_event->handle_tree_node_cm_sel        "Context Menu Request
+            FOR co_tree.
+
+    SET HANDLER lo_event->handle_tree_item_cm_sel        "Context Menu Request
+            FOR co_tree.
+
+    lo_event->mt_contextmenu = it_fcodes.
+
+*    mo_event01 ?= lo_event.
+    CALL METHOD co_tree->get_registered_events
+      IMPORTING
+        events = DATA(lt_event).
+
+    READ TABLE lt_event TRANSPORTING NO FIELDS WITH KEY eventid = cl_gui_column_tree=>eventid_node_context_menu_req.
+    IF sy-subrc <> 0.
+      APPEND VALUE #( eventid = cl_gui_column_tree=>eventid_node_context_menu_req ) TO lt_event.
+    ENDIF.
+
+    READ TABLE lt_event TRANSPORTING NO FIELDS WITH KEY eventid = cl_gui_column_tree=>eventid_item_context_menu_req.
+    IF sy-subrc <> 0.
+      APPEND VALUE #( eventid = cl_gui_column_tree=>eventid_item_context_menu_req ) TO lt_event.
+    ENDIF.
+
+
+
+    "go_tree1의 추가된 event set정보를 등록해 준다.
+    CALL METHOD co_tree->set_registered_events
+      EXPORTING
+        events                    = lt_event
+      EXCEPTIONS
+        cntl_error                = 1
+        cntl_system_error         = 2
+        illegal_event_combination = 3.
+    IF sy-subrc <> 0.
+      "go_tree1의 추가된 event set정보를 등록해 준다.
+      DELETE lt_event WHERE eventid = cl_gui_column_tree=>eventid_item_context_menu_req.
+      CALL METHOD co_tree->set_registered_events
+        EXPORTING
+          events                    = lt_event
+        EXCEPTIONS
+          cntl_error                = 1
+          cntl_system_error         = 2
+          illegal_event_combination = 3.
+    ENDIF.
+  ENDMETHOD.
+  METHOD tree_add_toolbar.
+
+    CHECK co_tree IS NOT INITIAL.
+    DATA : lo_event TYPE REF TO lcl_module.
+    CREATE OBJECT lo_event.
+
+    DATA : lv_butn_type TYPE tb_btype,
+           ls_toolbars  LIKE LINE OF it_fcodes
+           .
+    IF co_toolbar IS INITIAL.
+      CALL METHOD co_tree->get_toolbar_object
+        IMPORTING
+          er_toolbar = co_toolbar.
+    ENDIF.
+
+    LOOP AT it_fcodes ASSIGNING FIELD-SYMBOL(<ls_fcodes>) WHERE ufcode IS INITIAL.
+      CASE <ls_fcodes>-fcode.
+        WHEN mc_hyphen.
+          lv_butn_type = cntb_btype_sep.
+        WHEN OTHERS.
+          READ TABLE it_fcodes TRANSPORTING NO FIELDS WITH KEY ufcode = <ls_fcodes>-fcode.
+          IF sy-subrc = 0.
+            lv_butn_type = cntb_btype_menu.
+          ELSE.
+            lv_butn_type = cntb_btype_button.
+          ENDIF.
+      ENDCASE.
+      CALL METHOD co_toolbar->add_button
+        EXPORTING
+          fcode       = <ls_fcodes>-fcode
+          icon        = <ls_fcodes>-icon
+          "Button Type은 Domain값을 통해확인할수 있다.[ 3 : 구분선임]
+          butn_type   = lv_butn_type
+          text        = <ls_fcodes>-text
+          quickinfo   = <ls_fcodes>-quickinfo
+          is_disabled = <ls_fcodes>-is_disabled
+          "Tree를 그려준다.
+        .
+    ENDLOOP.
+
+    "Event
+    DATA(lt_toolbars) = it_fcodes.
+    DELETE lt_toolbars WHERE fcode = mc_hyphen.
+    GET REFERENCE OF co_toolbar INTO DATA(lv_ref).
+    ls_toolbars-reftoolbar = lv_ref->*.
+    MODIFY lt_toolbars FROM ls_toolbars TRANSPORTING reftoolbar WHERE fcode > ' '.
+
+    lo_event->mt_toolbar = lt_toolbars.
+
+    SET HANDLER lo_event->handle_toolbar_dropdown FOR co_toolbar.
+    SET HANDLER lo_event->handle_toolbar_selected FOR co_toolbar.
+  ENDMETHOD.
+  METHOD handle_toolbar_dropdown.
+    DATA : lo_ctmenu TYPE REF TO cl_ctmenu.
+    CREATE OBJECT lo_ctmenu.
+
+    READ TABLE mt_toolbar INTO DATA(ls_first) WITH KEY ufcode = fcode.
+    CHECK sy-subrc = 0.
+    LOOP AT mt_toolbar INTO DATA(ls_fcode) FROM sy-tabix.
+      IF ls_fcode-ufcode <> fcode.
+        EXIT.
+      ENDIF.
+      CALL METHOD lo_ctmenu->add_function
+        EXPORTING
+          fcode    = ls_fcode-fcode
+          text     = ls_fcode-text
+          disabled = ls_fcode-is_disabled
+          icon     = ls_fcode-icon.
+
+    ENDLOOP.
+
+    CALL METHOD ls_first-reftoolbar->track_context_menu
+      EXPORTING
+        context_menu = lo_ctmenu
+        posx         = posx
+        posy         = posy.
+
+  ENDMETHOD.
+  METHOD handle_toolbar_selected.
+
+    CALL FUNCTION 'SAPGUI_SET_FUNCTIONCODE'
+      EXPORTING
+        functioncode           = fcode
+      EXCEPTIONS
+        function_not_supported = 1.
+  ENDMETHOD.
+  METHOD handle_tree_item_cm_req.
+* In this case the standard menu is cleared.
+    CALL METHOD menu->clear.
+* The next line defines one line of the context menu.
+    LOOP AT mt_contextmenu INTO DATA(ls_contextmenu).
+      CALL METHOD menu->add_function
+        EXPORTING
+          fcode    = ls_contextmenu-fcode
+          text     = ls_contextmenu-text
+          icon     = ls_contextmenu-icon
+          disabled = ls_contextmenu-is_disabled.
+    ENDLOOP.
+  ENDMETHOD.
+  METHOD handle_tree_item_cm_sel.
+    CALL FUNCTION 'SAPGUI_SET_FUNCTIONCODE'
+      EXPORTING
+        functioncode           = fcode
+      EXCEPTIONS
+        function_not_supported = 1.
+  ENDMETHOD.
+  METHOD handle_tree_node_cm_req.
+
+* In this case the standard menu is cleared.
+    CALL METHOD menu->clear.
+* The next line defines one line of the context menu.
+    LOOP AT mt_contextmenu INTO DATA(ls_contextmenu).
+      CALL METHOD menu->add_function
+        EXPORTING
+          fcode    = ls_contextmenu-fcode
+          text     = ls_contextmenu-text
+          icon     = ls_contextmenu-icon
+          disabled = ls_contextmenu-is_disabled.
+    ENDLOOP.
+
+  ENDMETHOD.
+  METHOD handle_tree_node_cm_sel.
+    CALL FUNCTION 'SAPGUI_SET_FUNCTIONCODE'
+      EXPORTING
+        functioncode           = fcode
+      EXCEPTIONS
+        function_not_supported = 1.
+  ENDMETHOD.
   METHOD get_excl_buttons.
 *  APPEND cl_gui_alv_grid=>mc_fc_auf                     TO rt_excl.                 "Drilldown Totals Level
 *  APPEND cl_gui_alv_grid=>mc_fc_average                 TO rt_excl.                 "Calculate Average

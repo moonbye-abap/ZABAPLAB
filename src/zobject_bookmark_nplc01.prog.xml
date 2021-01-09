@@ -11,7 +11,7 @@
    <TPOOL>
     <item>
      <ID>R</ID>
-     <ENTRY>Include ZOBJECT_BOOKMARK_NPLC01</ENTRY>
+     <ENTRY>Implementation ( lcl_module )</ENTRY>
      <LENGTH>31</LENGTH>
     </item>
    </TPOOL>

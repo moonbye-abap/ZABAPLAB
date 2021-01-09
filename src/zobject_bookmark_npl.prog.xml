@@ -32,6 +32,7 @@
        <CONT_TYPE>SCREEN</CONT_TYPE>
        <CONT_NAME>SCREEN</CONT_NAME>
        <TYPE>OKCODE</TYPE>
+       <NAME>GV_OK_CODE1</NAME>
        <TEXT>____________________</TEXT>
        <LENGTH>020</LENGTH>
        <VISLENGTH>020</VISLENGTH>
@@ -45,22 +46,10 @@
        <LINE>PROCESS BEFORE OUTPUT.</LINE>
       </RPY_DYFLOW>
       <RPY_DYFLOW>
-       <LINE>  MODULE status_0100.</LINE>
+       <LINE>  MODULE dynpro_0100_pbo_begin.</LINE>
       </RPY_DYFLOW>
       <RPY_DYFLOW>
-       <LINE>  MODULE init_0100_create_container.</LINE>
-      </RPY_DYFLOW>
-      <RPY_DYFLOW>
-       <LINE>  MODULE init_0100_event_process.</LINE>
-      </RPY_DYFLOW>
-      <RPY_DYFLOW>
-       <LINE>  MODULE init_0100_grid_value.</LINE>
-      </RPY_DYFLOW>
-      <RPY_DYFLOW>
-       <LINE>  MODULE init_0100_grid_display.</LINE>
-      </RPY_DYFLOW>
-      <RPY_DYFLOW>
-       <LINE>  MODULE init_gv_first.</LINE>
+       <LINE>  MODULE dynpro_0100_pbo_end.</LINE>
       </RPY_DYFLOW>
       <RPY_DYFLOW/>
       <RPY_DYFLOW/>
@@ -68,18 +57,168 @@
        <LINE>PROCESS AFTER INPUT.</LINE>
       </RPY_DYFLOW>
       <RPY_DYFLOW>
-       <LINE>*  MODULE exit AT EXIT-COMMAND.</LINE>
+       <LINE>  MODULE dynpro_0100_pai_begin.</LINE>
       </RPY_DYFLOW>
       <RPY_DYFLOW>
-       <LINE>  MODULE user_command_0100.</LINE>
+       <LINE>  MODULE dynpro_0100_pai_end.</LINE>
+      </RPY_DYFLOW>
+     </FLOW_LOGIC>
+    </item>
+    <item>
+     <HEADER>
+      <PROGRAM>ZOBJECT_BOOKMARK_NPL</PROGRAM>
+      <SCREEN>0200</SCREEN>
+      <LANGUAGE>E</LANGUAGE>
+      <DESCRIPT>Tree Add</DESCRIPT>
+      <TYPE>N</TYPE>
+      <NEXTSCREEN>0200</NEXTSCREEN>
+      <LINES>027</LINES>
+      <COLUMNS>120</COLUMNS>
+     </HEADER>
+     <CONTAINERS>
+      <RPY_DYCATT>
+       <TYPE>SCREEN</TYPE>
+       <NAME>SCREEN</NAME>
+      </RPY_DYCATT>
+     </CONTAINERS>
+     <FIELDS>
+      <RPY_DYFATC>
+       <CONT_TYPE>SCREEN</CONT_TYPE>
+       <CONT_NAME>SCREEN</CONT_NAME>
+       <TYPE>TEXT</TYPE>
+       <NAME>txt001</NAME>
+       <TEXT>Type</TEXT>
+       <LINE>001</LINE>
+       <COLUMN>002</COLUMN>
+       <LENGTH>004</LENGTH>
+       <VISLENGTH>004</VISLENGTH>
+       <HEIGHT>001</HEIGHT>
+       <FORMAT>CHAR</FORMAT>
+       <REQU_ENTRY>N</REQU_ENTRY>
+       <LABELLEFT>X</LABELLEFT>
+      </RPY_DYFATC>
+      <RPY_DYFATC>
+       <CONT_TYPE>SCREEN</CONT_TYPE>
+       <CONT_NAME>SCREEN</CONT_NAME>
+       <TYPE>TEMPLATE</TYPE>
+       <NAME>GS_TREE_ADD-GUBN</NAME>
+       <TEXT>____</TEXT>
+       <DROPDOWN>K</DROPDOWN>
+       <LINE>001</LINE>
+       <COLUMN>015</COLUMN>
+       <LENGTH>004</LENGTH>
+       <VISLENGTH>020</VISLENGTH>
+       <HEIGHT>001</HEIGHT>
+       <FORMAT>CHAR</FORMAT>
+       <INPUT_FLD>X</INPUT_FLD>
+       <OUTPUT_FLD>X</OUTPUT_FLD>
+       <POSS_ENTRY>1</POSS_ENTRY>
+      </RPY_DYFATC>
+      <RPY_DYFATC>
+       <CONT_TYPE>SCREEN</CONT_TYPE>
+       <CONT_NAME>SCREEN</CONT_NAME>
+       <TYPE>TEXT</TYPE>
+       <NAME>txt002</NAME>
+       <TEXT>Name</TEXT>
+       <LINE>002</LINE>
+       <COLUMN>002</COLUMN>
+       <LENGTH>004</LENGTH>
+       <VISLENGTH>004</VISLENGTH>
+       <HEIGHT>001</HEIGHT>
+       <FORMAT>CHAR</FORMAT>
+       <REQU_ENTRY>N</REQU_ENTRY>
+       <LABELLEFT>X</LABELLEFT>
+      </RPY_DYFATC>
+      <RPY_DYFATC>
+       <CONT_TYPE>SCREEN</CONT_TYPE>
+       <CONT_NAME>SCREEN</CONT_NAME>
+       <TYPE>TEMPLATE</TYPE>
+       <NAME>GS_TREE_ADD-NAME</NAME>
+       <TEXT>____________________</TEXT>
+       <LINE>002</LINE>
+       <COLUMN>015</COLUMN>
+       <LENGTH>020</LENGTH>
+       <VISLENGTH>020</VISLENGTH>
+       <HEIGHT>001</HEIGHT>
+       <FORMAT>CHAR</FORMAT>
+       <INPUT_FLD>X</INPUT_FLD>
+       <OUTPUT_FLD>X</OUTPUT_FLD>
+      </RPY_DYFATC>
+      <RPY_DYFATC>
+       <CONT_TYPE>SCREEN</CONT_TYPE>
+       <CONT_NAME>SCREEN</CONT_NAME>
+       <TYPE>TEXT</TYPE>
+       <NAME>TXT003</NAME>
+       <TEXT>Description</TEXT>
+       <LINE>003</LINE>
+       <COLUMN>002</COLUMN>
+       <LENGTH>011</LENGTH>
+       <VISLENGTH>011</VISLENGTH>
+       <HEIGHT>001</HEIGHT>
+       <FORMAT>CHAR</FORMAT>
+       <REQU_ENTRY>N</REQU_ENTRY>
+       <LABELLEFT>X</LABELLEFT>
+      </RPY_DYFATC>
+      <RPY_DYFATC>
+       <CONT_TYPE>SCREEN</CONT_TYPE>
+       <CONT_NAME>SCREEN</CONT_NAME>
+       <TYPE>TEMPLATE</TYPE>
+       <NAME>GS_TREE_ADD-DESCRIPTION</NAME>
+       <TEXT>____________________</TEXT>
+       <LINE>003</LINE>
+       <COLUMN>015</COLUMN>
+       <LENGTH>020</LENGTH>
+       <VISLENGTH>020</VISLENGTH>
+       <HEIGHT>001</HEIGHT>
+       <FORMAT>CHAR</FORMAT>
+       <INPUT_FLD>X</INPUT_FLD>
+       <OUTPUT_FLD>X</OUTPUT_FLD>
+      </RPY_DYFATC>
+      <RPY_DYFATC>
+       <CONT_TYPE>SCREEN</CONT_TYPE>
+       <CONT_NAME>SCREEN</CONT_NAME>
+       <TYPE>OKCODE</TYPE>
+       <NAME>GV_OK_CODE2</NAME>
+       <TEXT>____________________</TEXT>
+       <LENGTH>020</LENGTH>
+       <VISLENGTH>020</VISLENGTH>
+       <HEIGHT>001</HEIGHT>
+       <FORMAT>CHAR</FORMAT>
+       <INPUT_FLD>X</INPUT_FLD>
+      </RPY_DYFATC>
+     </FIELDS>
+     <FLOW_LOGIC>
+      <RPY_DYFLOW>
+       <LINE>PROCESS BEFORE OUTPUT.</LINE>
+      </RPY_DYFLOW>
+      <RPY_DYFLOW>
+       <LINE>  MODULE dynpro_0200_pbo_begin.</LINE>
+      </RPY_DYFLOW>
+      <RPY_DYFLOW>
+       <LINE>  MODULE dynpro_0200_pbo_end.</LINE>
+      </RPY_DYFLOW>
+      <RPY_DYFLOW/>
+      <RPY_DYFLOW/>
+      <RPY_DYFLOW>
+       <LINE>PROCESS AFTER INPUT.</LINE>
+      </RPY_DYFLOW>
+      <RPY_DYFLOW>
+       <LINE>  MODULE dynpro_0200_pai_begin.</LINE>
+      </RPY_DYFLOW>
+      <RPY_DYFLOW>
+       <LINE>  MODULE dynpro_0200_pai_end.</LINE>
+      </RPY_DYFLOW>
+      <RPY_DYFLOW/>
+      <RPY_DYFLOW>
+       <LINE>PROCESS ON VALUE-REQUEST.</LINE>
       </RPY_DYFLOW>
      </FLOW_LOGIC>
     </item>
    </DYNPROS>
    <CUA>
     <ADM>
-     <ACTCODE>000001</ACTCODE>
-     <PFKCODE>000001</PFKCODE>
+     <ACTCODE>000002</ACTCODE>
+     <PFKCODE>000002</PFKCODE>
     </ADM>
     <STA>
      <RSMPE_STAT>
@@ -89,6 +228,14 @@
       <PFKCODE>000001</PFKCODE>
       <BUTCODE>0001</BUTCODE>
       <INT_NOTE>main</INT_NOTE>
+     </RSMPE_STAT>
+     <RSMPE_STAT>
+      <CODE>PF_0200</CODE>
+      <MODAL>D</MODAL>
+      <ACTCODE>000002</ACTCODE>
+      <PFKCODE>000002</PFKCODE>
+      <BUTCODE>0001</BUTCODE>
+      <INT_NOTE>TREE ADD( POPUP )</INT_NOTE>
      </RSMPE_STAT>
     </STA>
     <FUN>
@@ -101,6 +248,15 @@
      </RSMPE_FUNT>
      <RSMPE_FUNT>
       <CODE>CANC</CODE>
+      <TEXTNO>001</TEXTNO>
+      <TYPE>E</TYPE>
+      <TEXT_TYPE>S</TEXT_TYPE>
+      <TEXT_NAME>ICON_CANCEL</TEXT_NAME>
+      <ICON_ID>@0W@</ICON_ID>
+      <FUN_TEXT>Cancel</FUN_TEXT>
+     </RSMPE_FUNT>
+     <RSMPE_FUNT>
+      <CODE>CANCEL</CODE>
       <TEXTNO>001</TEXTNO>
       <TYPE>E</TYPE>
       <TEXT_TYPE>S</TEXT_TYPE>
@@ -124,6 +280,20 @@
       <FUN_TEXT>Save</FUN_TEXT>
      </RSMPE_FUNT>
     </FUN>
+    <BUT>
+     <RSMPE_BUT>
+      <PFK_CODE>000002</PFK_CODE>
+      <CODE>0001</CODE>
+      <NO>01</NO>
+      <PFNO>11</PFNO>
+     </RSMPE_BUT>
+     <RSMPE_BUT>
+      <PFK_CODE>000002</PFK_CODE>
+      <CODE>0001</CODE>
+      <NO>02</NO>
+      <PFNO>12</PFNO>
+     </RSMPE_BUT>
+    </BUT>
     <PFK>
      <RSMPE_PFK>
       <CODE>000001</CODE>
@@ -140,11 +310,35 @@
      <RSMPE_PFK>
       <CODE>000001</CODE>
       <PFNO>12</PFNO>
-      <FUNCODE>CANC</FUNCODE>
+      <FUNCODE>CANCEL</FUNCODE>
       <FUNNO>001</FUNNO>
      </RSMPE_PFK>
      <RSMPE_PFK>
       <CODE>000001</CODE>
+      <PFNO>15</PFNO>
+      <FUNCODE>EXIT</FUNCODE>
+      <FUNNO>001</FUNNO>
+     </RSMPE_PFK>
+     <RSMPE_PFK>
+      <CODE>000002</CODE>
+      <PFNO>03</PFNO>
+      <FUNCODE>BACK</FUNCODE>
+      <FUNNO>001</FUNNO>
+     </RSMPE_PFK>
+     <RSMPE_PFK>
+      <CODE>000002</CODE>
+      <PFNO>11</PFNO>
+      <FUNCODE>SAVE</FUNCODE>
+      <FUNNO>001</FUNNO>
+     </RSMPE_PFK>
+     <RSMPE_PFK>
+      <CODE>000002</CODE>
+      <PFNO>12</PFNO>
+      <FUNCODE>CANCEL</FUNCODE>
+      <FUNNO>001</FUNNO>
+     </RSMPE_PFK>
+     <RSMPE_PFK>
+      <CODE>000002</CODE>
       <PFNO>15</PFNO>
       <FUNCODE>EXIT</FUNCODE>
       <FUNNO>001</FUNNO>
@@ -161,10 +355,30 @@
      </RSMPE_STAF>
      <RSMPE_STAF>
       <STATUS>PF_0100</STATUS>
+      <FUNCTION>CANCEL</FUNCTION>
+     </RSMPE_STAF>
+     <RSMPE_STAF>
+      <STATUS>PF_0100</STATUS>
       <FUNCTION>EXIT</FUNCTION>
      </RSMPE_STAF>
      <RSMPE_STAF>
       <STATUS>PF_0100</STATUS>
+      <FUNCTION>SAVE</FUNCTION>
+     </RSMPE_STAF>
+     <RSMPE_STAF>
+      <STATUS>PF_0200</STATUS>
+      <FUNCTION>BACK</FUNCTION>
+     </RSMPE_STAF>
+     <RSMPE_STAF>
+      <STATUS>PF_0200</STATUS>
+      <FUNCTION>CANCEL</FUNCTION>
+     </RSMPE_STAF>
+     <RSMPE_STAF>
+      <STATUS>PF_0200</STATUS>
+      <FUNCTION>EXIT</FUNCTION>
+     </RSMPE_STAF>
+     <RSMPE_STAF>
+      <STATUS>PF_0200</STATUS>
       <FUNCTION>SAVE</FUNCTION>
      </RSMPE_STAF>
     </SET>
@@ -188,6 +402,25 @@
       <MODAL>D</MODAL>
       <INT_NOTE>main</INT_NOTE>
      </RSMPE_ATRT>
+     <RSMPE_ATRT>
+      <OBJ_TYPE>A</OBJ_TYPE>
+      <OBJ_CODE>000002</OBJ_CODE>
+      <MODAL>D</MODAL>
+      <INT_NOTE>TREE ADD( POPUP )</INT_NOTE>
+     </RSMPE_ATRT>
+     <RSMPE_ATRT>
+      <OBJ_TYPE>P</OBJ_TYPE>
+      <OBJ_CODE>000002</OBJ_CODE>
+      <MODAL>D</MODAL>
+      <INT_NOTE>TREE ADD( POPUP )</INT_NOTE>
+     </RSMPE_ATRT>
+     <RSMPE_ATRT>
+      <OBJ_TYPE>B</OBJ_TYPE>
+      <OBJ_CODE>000002</OBJ_CODE>
+      <SUB_CODE>0001</SUB_CODE>
+      <MODAL>D</MODAL>
+      <INT_NOTE>TREE ADD( POPUP )</INT_NOTE>
+     </RSMPE_ATRT>
     </DOC>
     <TIT>
      <RSMPE_TITT>
@@ -197,6 +430,36 @@
     </TIT>
    </CUA>
    <TPOOL>
+    <item>
+     <ID>I</ID>
+     <KEY>001</KEY>
+     <ENTRY>추가</ENTRY>
+     <LENGTH>12</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>002</KEY>
+     <ENTRY>삭제</ENTRY>
+     <LENGTH>12</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>003</KEY>
+     <ENTRY>Object BookMarker for NPL</ENTRY>
+     <LENGTH>50</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>004</KEY>
+     <ENTRY>Tree Add</ENTRY>
+     <LENGTH>18</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>E01</KEY>
+     <ENTRY>Node를 먼저 선택해 주세요</ENTRY>
+     <LENGTH>26</LENGTH>
+    </item>
     <item>
      <ID>R</ID>
      <ENTRY>OBJECT BOOKMARKER FOR NPL</ENTRY>

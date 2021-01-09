@@ -2,65 +2,20 @@
 *& Include          ZOBJECT_BOOKMARK_NPLC04
 *&---------------------------------------------------------------------*
 
-
-CLASS lcl_event DEFINITION INHERITING FROM cl_gui_object.
-  PUBLIC SECTION.
-    DATA : mv_gubn TYPE char10.
-    METHODS :
-      constructor
-        IMPORTING
-          i_gubn TYPE char10,
-      "ALV Hot Spot Click Event
-      handle_toolbar
-          FOR EVENT toolbar OF cl_gui_alv_grid
-        IMPORTING
-          e_object
-          e_interactive,
-
-      handle_user_command
-          FOR EVENT user_command OF cl_gui_alv_grid
-        IMPORTING
-          e_ucomm,
-
-      handle_onf4
-          FOR EVENT onf4 OF cl_gui_alv_grid
-        IMPORTING
-          e_fieldname
-          e_fieldvalue
-          es_row_no
-          er_event_data
-          et_bad_cells
-          e_display,
-
-      handle_data_changed_finished
-          FOR EVENT data_changed_finished OF cl_gui_alv_grid
-        IMPORTING
-          e_modified
-          et_good_cells,
-
-
-      handle_data_changed
-          FOR EVENT data_changed OF cl_gui_alv_grid
-        IMPORTING
-          er_data_changed
-          e_onf4
-          e_onf4_before
-          e_onf4_after
-          e_ucomm,
-
-
-      handle_button_click
-          FOR EVENT button_click OF cl_gui_alv_grid
-        IMPORTING
-          es_col_id
-          es_row_no,
-
-      handle_hotspot_click
-                  FOR EVENT hotspot_click OF cl_gui_alv_grid
-        IMPORTING e_row_id
-                  e_column_id.
-ENDCLASS.
 CLASS lcl_event IMPLEMENTATION.
+  METHOD view_tree1_context_menu.
+* In this case the standard menu is cleared.
+    CALL METHOD menu->clear.
+* The next line defines one line of the context menu.
+    CALL METHOD menu->add_function
+      EXPORTING
+        fcode = 'APPEND'
+        text  = TEXT-001.        "Delete Subtree
+    CALL METHOD menu->add_function
+      EXPORTING
+        fcode = 'DELETE'
+        text  = TEXT-002.        "Delete Subtree
+  ENDMETHOD.
   METHOD constructor.
     CALL METHOD super->constructor( ).
     mv_gubn = i_gubn.
@@ -128,4 +83,6 @@ CLASS lcl_event IMPLEMENTATION.
 *                                                  es_row_no.
     ENDCASE.
   ENDMETHOD.                    "handle_hotspot_click1_1
+
+
 ENDCLASS.

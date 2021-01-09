@@ -11,8 +11,8 @@
    <TPOOL>
     <item>
      <ID>R</ID>
-     <ENTRY>Include ZOBJECT_BOOKMARK_NPLC02</ENTRY>
-     <LENGTH>31</LENGTH>
+     <ENTRY>Implementation ( lcl_controller )</ENTRY>
+     <LENGTH>33</LENGTH>
     </item>
    </TPOOL>
   </asx:values>
