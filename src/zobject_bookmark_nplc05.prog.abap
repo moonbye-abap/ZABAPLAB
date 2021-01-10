@@ -37,6 +37,8 @@ CLASS lcl_scr0100 IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD handle_pai.
+    DATA lt_node TYPE lvc_t_nkey.
+
     CASE iv_function_code.
         " For the default GUI Status, global constants can be used to evaluate the function code.
         " However, if you set your own GUI Status using method set_status( ),
@@ -47,7 +49,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
       WHEN gc_function_code_cancel.
         LEAVE PROGRAM.
       WHEN 'APPEND'.
-        DATA lt_node TYPE lvc_t_nkey.
+        CLEAR : gs_tree_add-name, gs_tree_add-description.
         CALL METHOD go_tree1->get_selected_nodes
           CHANGING
             ct_selected_nodes = lt_node.
@@ -74,15 +76,44 @@ CLASS lcl_scr0100 IMPLEMENTATION.
         IF go_scr0200 IS BOUND.
           CALL METHOD go_scr0200->show_as_popup( ).
         ENDIF.
+      WHEN 'DELETE'.
+        CALL METHOD go_tree1->get_selected_nodes
+          CHANGING
+            ct_selected_nodes = lt_node.
+        DATA(lv_node) = lt_node[ 1 ].
+        DATA(lv_node1) = lv_node.
+        CONDENSE lv_node1.
+        IF lv_node1 = '1'.
+          MESSAGE s000 WITH TEXT-e04 DISPLAY LIKE gc_e.
+          RETURN.
+        ENDIF.
+        CALL METHOD go_tree1->get_subtree
+          EXPORTING
+            i_node_key       = lv_node
+          IMPORTING
+            et_subtree_nodes = DATA(lt_sub).
+
+        CALL METHOD go_tree1->delete_subtree
+          EXPORTING
+            i_node_key                = lv_node
+            i_update_parents_expander = space
+            i_update_parents_folder   = space
+          EXCEPTIONS
+            node_key_not_in_model     = 1
+            OTHERS                    = 2.
+        IF sy-subrc <> 0.
+*         Implement suitable error handling here
+        ENDIF.
+        CALL METHOD go_tree1->frontend_update( ).
       WHEN OTHERS.
         MESSAGE s000 WITH iv_function_code.
         CALL METHOD go_tree1->get_selected_nodes
           CHANGING
             ct_selected_nodes = lt_node.
-        CALL METHOD go_tree1->get_selected_item
-          IMPORTING
-            e_fieldname     = DATA(lv_fieldname)
-            e_selected_node = DATA(lv_node).
+*        CALL METHOD go_tree1->get_selected_item
+*          IMPORTING
+*            e_fieldname     = DATA(lv_fieldname)
+*            e_selected_node = DATA(lv_node).
 
 *       BREAK-POINT.
 
@@ -116,6 +147,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
       CREATE OBJECT go_tree1
         EXPORTING
           parent         = go_left
+          item_selection = ' '
           no_html_header = gc_x.
 
       CREATE OBJECT go_grid1
@@ -286,6 +318,8 @@ CLASS lcl_scr0100 IMPLEMENTATION.
       lt_fcodes = VALUE #(
             ( fcode = 'APPEND'  icon = icon_insert_row text ='추가'   quickinfo ='추가' ufcode = '' )
             ( fcode = 'DELETE'  icon = icon_delete_row text ='삭제'   quickinfo ='삭제' ufcode = '' )
+*            ( fcode = '-' )
+*            ( fcode = 'SAVE'    icon = icon_system_save text ='저장'   quickinfo ='저장' ufcode = '' )
             ).
       CALL METHOD lcl_module=>tree_add_toolbar
         EXPORTING
@@ -307,37 +341,20 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           co_tree   = go_tree1.
 
 
-*      CALL METHOD go_alv_tree_toolbar->add_button
-*        EXPORTING
-*          fcode     = 'APPEND'
-*          icon      = icon_insert_row
-*          "Button Type은 Domain값을 통해확인할수 있다.[ 3 : 구분선임]
-*          butn_type = cntb_btype_button
-*          text      = '추가'
-*          quickinfo = '추가'
-*          "Tree를 그려준다.
-*        .
-*
-*      CALL METHOD go_alv_tree_toolbar->add_button
-*        EXPORTING
-*          fcode     = 'DELETE'
-*          icon      = icon_delete_row
-*          "Button Type은 Domain값을 통해확인할수 있다.[ 3 : 구분선임]
-*          "cntb_btype_menu : Sub Menu가 존재하는 경우 선택
-*          "cntb_btype_button : Sub Menu없이 자기자신이 버튼인 경우.
-*          butn_type = cntb_btype_button
-*          text      = '삭제'
-*          quickinfo = '삭제'
-*          "Tree를 그려준다.
-*        .
 
-
-      DATA ls_treeinfo TYPE lcl_controller=>mty_s_treeinfo.
+      DATA : ls_treeinfo TYPE lcl_controller=>mty_s_treeinfo,
+             lt_treeicon TYPE lcl_controller=>mty_t_treeicon.
       DATA :lt_expand TYPE lvc_t_nkey.
       ls_treeinfo-fmkey = 'GUID'.
       ls_treeinfo-fname = 'NAME'.
+      ls_treeinfo-ficon = 'TYPE'.
       ls_treeinfo-fukey = 'PARENT_GUID'.
       ls_treeinfo-fnode = 'NODE_KEY'.
+
+      lt_treeicon = VALUE #(
+            ( gubn = 'N'  n_image = icon_closed_folder  exp_image = icon_open_folder )
+            ( gubn = 'T'  n_image = icon_database_table exp_image = icon_database_table )
+            ).
 
       DATA lt_tree1 TYPE gty_t_tree.
       CALL METHOD lcl_model=>get_nodes(
@@ -350,9 +367,11 @@ CLASS lcl_scr0100 IMPLEMENTATION.
       CALL METHOD lcl_controller=>tree_draw
         EXPORTING
           is_fieldinfo = ls_treeinfo
+          it_fieldicon = lt_treeicon
         CHANGING
           co_tree      = go_tree1
           ct_data      = lt_tree1
+          ct_tree      = gt_list1
           ct_expand    = lt_expand.
 
 *      CALL METHOD go_tree1->update_calculations.

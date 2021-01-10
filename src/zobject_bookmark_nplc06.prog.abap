@@ -24,7 +24,42 @@ CLASS lcl_scr0200 IMPLEMENTATION.
     CALL SCREEN iv_dynpro_number STARTING AT iv_xstart iv_ystart
       ENDING AT iv_xend iv_yend.
   ENDMETHOD.
+  METHOD pov_name.
+    DATA(lv_bugn) = ycl_commons=>read_scr_field( i_fieldname = 'GS_TREE_ADD-GUBN' ).
+    DATA(lv_name) = ycl_commons=>read_scr_field( i_fieldname = 'GS_TREE_ADD-NAME' ).
+    CHECK lv_bugn = gc_t.
+    IF lv_name IS INITIAL.
+      MESSAGE s000 WITH TEXT-e02 DISPLAY LIKE gc_e.
+      RETURN.
+    ENDIF.
+    lv_name = |%{ lv_name }%|.
+    SELECT  tabname ,
+            ddtext
+      INTO TABLE @DATA(lt_f4)
+      FROM dd02t
+     WHERE ddlanguage = @sy-langu
+       AND tabname LIKE @lv_name
+      .
+    CALL METHOD ycl_commons=>disp_f4(
+      EXPORTING
+        it_data    = lt_f4
+        i_retfield = 'TABNAME'
+        i_scrfield = 'GS_TREE_ADD-NAME'
+      IMPORTING
+        et_result  = DATA(lt_rtn)
+    ).
 
+    "Description을 갱신해 준다.
+    lv_name = lt_rtn[ 1 ]-fieldval.
+    SELECT SINGLE ddtext
+      INTO @gs_tree_add-description
+      FROM dd02t
+     WHERE ddlanguage = @sy-langu
+       AND tabname = @lv_name
+      .
+    ycl_commons=>write_scr_field( i_fieldname = 'GS_TREE_ADD-DESCRIPTION' i_fieldvalue = gs_tree_add-description it_fields = lt_rtn ).
+
+  ENDMETHOD.
   METHOD pbo_begin.
 *    CALL METHOD pbo_init_create_container( ).
 *    CALL METHOD pbo_init_event_process( ).
@@ -54,6 +89,7 @@ CLASS lcl_scr0200 IMPLEMENTATION.
       ENDIF.
 
     ENDIF.
+
     set_status( iv_status_key = 'PF_0200' ).
     super->pbo_begin( ).
   ENDMETHOD.
@@ -72,17 +108,37 @@ CLASS lcl_scr0200 IMPLEMENTATION.
       WHEN gc_function_code_cancel.
         LEAVE PROGRAM.
       WHEN 'SAVE'.
-
+        IF gs_tree_add-gubn IS INITIAL OR
+           gs_tree_add-name IS INITIAL.
+          MESSAGE s000 WITH TEXT-e03 DISPLAY LIKE gc_e.
+          RETURN.
+        ENDIF.
         "노드로 화면에 추가한다.
         CASE gs_tree_add-gubn.
           WHEN 'N'.
             ls_node_layout-n_image    = icon_closed_folder.
             ls_node_layout-exp_image  = icon_open_folder.
             ls_node_layout-isfolder = gc_x.
+          WHEN 'T'.
+            ls_node_layout-n_image    = icon_database_table.
+            ls_node_layout-exp_image  = icon_database_table.
+            ls_node_layout-isfolder = ' '.
         ENDCASE.
-        ls_list1-description = gs_tree_add-description.
+        "DB에 저장할 내역을 생성한다.
+        READ TABLE gt_list1 INTO ls_list1 WITH KEY node_key = gs_tree_add-node.
+        IF sy-subrc = 0.
+          ls_list1-parent_guid = ls_list1-guid.
+          ls_list1-guid  = ycl_commons=>get_uuidx16( ).
+          ls_list1-usrid = sy-uname.
+          ls_list1-type = gs_tree_add-gubn.
+          ls_list1-name = gs_tree_add-name.
+          ls_list1-description = gs_tree_add-description.
+        ENDIF.
+
+        "Node를 추가한다.
         CALL METHOD ycl_commons=>tree_add_one_node_child
           EXPORTING
+            i_fn_node        = 'NODE_KEY'
             i_relat_node_key = gs_tree_add-node
             i_node_text      = gs_tree_add-name
             is_node_layout   = ls_node_layout
@@ -90,11 +146,11 @@ CLASS lcl_scr0200 IMPLEMENTATION.
           IMPORTING
             e_new_node_key   = DATA(lv_nkey_rtn)
           CHANGING
-            co_tree          = go_tree1.
+            co_tree          = go_tree1
+            ct_data          = gt_list1.
 
-        "추가된 Node를 DB에 반영한다.
-
-
+        "DB에 반영한다.
+        CALL METHOD lcl_model=>save_tree( gt_list1 ).
         leave( ).
       WHEN OTHERS.
         MESSAGE s000 WITH iv_function_code.

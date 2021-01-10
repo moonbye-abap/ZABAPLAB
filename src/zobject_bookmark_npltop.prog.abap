@@ -64,7 +64,6 @@ CLASS : lcl_controller DEFINITION DEFERRED,  "MVC ( Controller )
         lcl_event      DEFINITION DEFERRED,  "Event Receiver
         lcl_module     DEFINITION DEFERRED.  "Common Module
 DATA : go_control TYPE REF TO lcl_controller,
-       go_model   TYPE REF TO lcl_model,
        go_module  TYPE REF TO lcl_module,
 
        go_scr0100 TYPE REF TO lcl_scr0100,
@@ -290,13 +289,21 @@ CLASS lcl_controller DEFINITION.
                 mc_x TYPE c VALUE 'X'.
     TYPES:
       BEGIN OF mty_s_treeinfo,
+        ficon TYPE fieldname,
         fmkey TYPE fieldname,
         fukey TYPE fieldname,
         fname TYPE fieldname,
         fsort TYPE fieldname,
         fnode TYPE fieldname,
       END OF mty_s_treeinfo .
+    TYPES:
+      BEGIN OF mty_s_treeicon,
+        gubn      TYPE fieldname,
+        n_image   TYPE icon_d,
+        exp_image TYPE icon_d,
 
+      END OF mty_s_treeicon,
+      mty_t_treeicon TYPE STANDARD TABLE OF mty_s_treeicon.
     CLASS-METHODS :
 *    CALL METHOD go_control->fcat_0100_build(
 *      EXPORTING
@@ -307,21 +314,25 @@ CLASS lcl_controller DEFINITION.
       tree_draw
         IMPORTING
           !is_fieldinfo TYPE mty_s_treeinfo
+          !it_fieldicon TYPE mty_t_treeicon
         CHANGING
           !co_tree      TYPE REF TO cl_gui_alv_tree
           !ct_data      TYPE STANDARD TABLE
+          !ct_tree      TYPE STANDARD TABLE
           !ct_expand    TYPE lvc_t_nkey ,
       tree_draw_image
         IMPORTING
           !it_data        TYPE STANDARD TABLE
+          !it_fieldicon   TYPE mty_t_treeicon
           !is_data        TYPE any
           !is_fieldinfo   TYPE mty_s_treeinfo
         CHANGING
           !cs_node_layout TYPE lvc_s_layn
-          !c_isfolder     TYPE char01           ,
+          !c_isfolder     TYPE char01          ,
       tree_draw_recursive
         IMPORTING
           !is_fieldinfo TYPE mty_s_treeinfo
+          !it_fieldicon TYPE mty_t_treeicon
           !is_upper     TYPE any
         EXPORTING
           !e_err_chk    TYPE char01
@@ -329,6 +340,7 @@ CLASS lcl_controller DEFINITION.
         CHANGING
           !co_tree      TYPE REF TO cl_gui_alv_tree
           !ct_data      TYPE STANDARD TABLE
+          !ct_tree      TYPE STANDARD TABLE
           !ct_expand    TYPE STANDARD TABLE ,
       grid_0100_display
         CHANGING
@@ -352,6 +364,9 @@ CLASS lcl_model DEFINITION.
   PUBLIC SECTION.
 
     CLASS-METHODS :
+      save_tree
+        IMPORTING
+          it_tree TYPE gty_t_tree,
       get_acc_table
         IMPORTING i_usr        TYPE sy-uname
         CHANGING  ct_acc_table TYPE gty_t_acc_table,
@@ -473,6 +488,7 @@ CLASS lcl_scr0200 DEFINITION
 
     METHODS pbo_begin REDEFINITION.
 
+    METHODS pov_name.
 
   PROTECTED SECTION.
     "DynPro 명령 ( Call Screen xxxx)

@@ -134,11 +134,11 @@
        <CONT_NAME>SCREEN</CONT_NAME>
        <TYPE>TEMPLATE</TYPE>
        <NAME>GS_TREE_ADD-NAME</NAME>
-       <TEXT>____________________</TEXT>
+       <TEXT>______________________________</TEXT>
        <LINE>002</LINE>
        <COLUMN>015</COLUMN>
-       <LENGTH>020</LENGTH>
-       <VISLENGTH>020</VISLENGTH>
+       <LENGTH>030</LENGTH>
+       <VISLENGTH>030</VISLENGTH>
        <HEIGHT>001</HEIGHT>
        <FORMAT>CHAR</FORMAT>
        <INPUT_FLD>X</INPUT_FLD>
@@ -164,11 +164,11 @@
        <CONT_NAME>SCREEN</CONT_NAME>
        <TYPE>TEMPLATE</TYPE>
        <NAME>GS_TREE_ADD-DESCRIPTION</NAME>
-       <TEXT>____________________</TEXT>
+       <TEXT>________________________________________</TEXT>
        <LINE>003</LINE>
        <COLUMN>015</COLUMN>
-       <LENGTH>020</LENGTH>
-       <VISLENGTH>020</VISLENGTH>
+       <LENGTH>040</LENGTH>
+       <VISLENGTH>040</VISLENGTH>
        <HEIGHT>001</HEIGHT>
        <FORMAT>CHAR</FORMAT>
        <INPUT_FLD>X</INPUT_FLD>
@@ -211,6 +211,9 @@
       <RPY_DYFLOW/>
       <RPY_DYFLOW>
        <LINE>PROCESS ON VALUE-REQUEST.</LINE>
+      </RPY_DYFLOW>
+      <RPY_DYFLOW>
+       <LINE>  field gs_tree_add-name module onf4_name.</LINE>
       </RPY_DYFLOW>
      </FLOW_LOGIC>
     </item>
@@ -459,6 +462,24 @@
      <KEY>E01</KEY>
      <ENTRY>Node를 먼저 선택해 주세요</ENTRY>
      <LENGTH>26</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>E02</KEY>
+     <ENTRY>NAME(검색어)을 입력해 주세요</ENTRY>
+     <LENGTH>28</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>E03</KEY>
+     <ENTRY>필수값을 입력해 주세요.</ENTRY>
+     <LENGTH>23</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>E04</KEY>
+     <ENTRY>Root는 제거할 수 없습니다.</ENTRY>
+     <LENGTH>27</LENGTH>
     </item>
     <item>
      <ID>R</ID>

@@ -67,3 +67,11 @@ MODULE dynpro_0200_pai_end INPUT.
       iv_dynpro_number = sy-dynnr
   ).
 ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  ONF4_NAME  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE onf4_name INPUT.
+  call method go_scr0200->pov_name.
+ENDMODULE.

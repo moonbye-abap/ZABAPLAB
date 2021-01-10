@@ -28,10 +28,9 @@ START-OF-SELECTION.
 *  PERFORM fc_get_data.
   CREATE OBJECT go_module.
   CREATE OBJECT go_control.
-  CREATE OBJECT go_model.
 
 
-  CALL METHOD go_model->get_acc_table( EXPORTING i_usr = sy-uname CHANGING ct_acc_table = gt_acc_table ).
+  CALL METHOD lcl_model=>get_acc_table( EXPORTING i_usr = sy-uname CHANGING ct_acc_table = gt_acc_table ).
 
   cl_bus_abstract_screen=>get_screen(
     EXPORTING

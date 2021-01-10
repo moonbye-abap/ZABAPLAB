@@ -4,7 +4,9 @@
 
 CLASS lcl_controller IMPLEMENTATION.
   METHOD tree_draw_recursive.
+
     DATA : lr_data        TYPE REF TO data,
+           lr_new         TYPE REF TO data,
            lv_node_text   TYPE lvc_value,
            ls_node_layout TYPE lvc_s_layn,
            lv_idx         TYPE sy-tabix,
@@ -15,6 +17,7 @@ CLASS lcl_controller IMPLEMENTATION.
            lv_isfolder    TYPE c.
 
     FIELD-SYMBOLS : <ls_data>              TYPE any,
+                    <ls_new>               TYPE any,
                     <ls_from>              TYPE any,
 
                     <lv_upper>             TYPE any,
@@ -60,6 +63,7 @@ CLASS lcl_controller IMPLEMENTATION.
       CALL METHOD tree_draw_image
         EXPORTING
           it_data        = ct_data
+          it_fieldicon   = it_fieldicon
           is_data        = <ls_data>
           is_fieldinfo   = is_fieldinfo
         CHANGING
@@ -82,6 +86,12 @@ CLASS lcl_controller IMPLEMENTATION.
           node_not_found       = 2
           OTHERS               = 3.
 
+      lv_idx = lines( ct_tree ).
+      READ TABLE ct_tree REFERENCE INTO lr_new INDEX lv_idx.
+      ASSIGN lr_new->* TO <ls_new>.
+      ASSIGN COMPONENT is_fieldinfo-fnode OF STRUCTURE <ls_new> TO <lv_value>.
+      <lv_value> = lv_nkey_rtn.
+
       ASSIGN COMPONENT is_fieldinfo-fnode OF STRUCTURE <ls_data> TO <lv_value>.
       <lv_value> = lv_nkey_rtn.
 
@@ -92,6 +102,7 @@ CLASS lcl_controller IMPLEMENTATION.
       CALL METHOD tree_draw_recursive
         EXPORTING
           is_fieldinfo = is_fieldinfo
+          it_fieldicon = it_fieldicon
           is_upper     = <ls_data>
         IMPORTING
           e_err_chk    = lv_err_chk
@@ -99,6 +110,7 @@ CLASS lcl_controller IMPLEMENTATION.
         CHANGING
           co_tree      = co_tree
           ct_data      = ct_data
+          ct_tree      = ct_tree
           ct_expand    = ct_expand.
 
       IF lv_err_chk = mc_e.
@@ -125,6 +137,19 @@ CLASS lcl_controller IMPLEMENTATION.
     ENDIF.
     cs_node_layout-n_image = icon_closed_folder.
     cs_node_layout-exp_image = icon_open_folder.
+
+    IF it_fieldicon IS NOT INITIAL.
+      ASSIGN COMPONENT is_fieldinfo-ficon OF STRUCTURE is_data TO FIELD-SYMBOL(<lv_gubn>).
+      IF sy-subrc = 0.
+        READ TABLE it_fieldicon INTO DATA(ls_fieldicon) WITH KEY gubn = <lv_gubn>.
+        IF sy-subrc = 0.
+          cs_node_layout-n_image   = ls_fieldicon-n_image.
+          cs_node_layout-exp_image = ls_fieldicon-exp_image.
+
+        ENDIF.
+
+      ENDIF.
+    ENDIF.
   ENDMETHOD.
   METHOD tree_draw.
 
@@ -132,12 +157,14 @@ CLASS lcl_controller IMPLEMENTATION.
            lv_node_text   TYPE lvc_value,
            ls_node_layout TYPE lvc_s_layn,
            lv_nkey_rtn    TYPE lvc_nkey,
+           lv_idx         TYPE sy-tabix,
            lv_isfolder    TYPE c.
     DATA : lv_err_chk TYPE char01,
            lv_err_msg TYPE char100.
-    DATA : lr_otab TYPE REF TO data.
+    DATA : lr_new     TYPE REF TO data.
 
     FIELD-SYMBOLS : <ls_data>  TYPE any,
+                    <ls_new>   TYPE any,
                     <lt_data>  TYPE STANDARD TABLE,
                     <lv_value> TYPE any.
 
@@ -153,6 +180,7 @@ CLASS lcl_controller IMPLEMENTATION.
     CALL METHOD tree_draw_image
       EXPORTING
         it_data        = <lt_data>
+        it_fieldicon   = it_fieldicon
         is_data        = <ls_data>
         is_fieldinfo   = is_fieldinfo
       CHANGING
@@ -176,6 +204,12 @@ CLASS lcl_controller IMPLEMENTATION.
         node_not_found       = 2
         OTHERS               = 3.
 
+    lv_idx = lines( ct_tree ).
+    READ TABLE ct_tree REFERENCE INTO lr_new INDEX lv_idx.
+    ASSIGN lr_new->* TO <ls_new>.
+    ASSIGN COMPONENT is_fieldinfo-fnode OF STRUCTURE <ls_new> TO <lv_value>.
+    <lv_value> = lv_nkey_rtn.
+
     IF lv_isfolder = mc_x.
       ASSIGN COMPONENT is_fieldinfo-fnode OF STRUCTURE <ls_data> TO <lv_value>.
       <lv_value> = lv_nkey_rtn.
@@ -185,6 +219,7 @@ CLASS lcl_controller IMPLEMENTATION.
     CALL METHOD tree_draw_recursive
       EXPORTING
         is_fieldinfo = is_fieldinfo
+        it_fieldicon = it_fieldicon
         is_upper     = <ls_data>
       IMPORTING
         e_err_chk    = lv_err_chk
@@ -192,6 +227,7 @@ CLASS lcl_controller IMPLEMENTATION.
       CHANGING
         co_tree      = co_tree
         ct_data      = <lt_data>
+        ct_tree      = ct_tree
         ct_expand    = ct_expand.
     ct_data = <lt_data>.
   ENDMETHOD.
@@ -208,13 +244,14 @@ CLASS lcl_controller IMPLEMENTATION.
     CALL METHOD go_tree1->set_table_for_first_display   "일반 ALV의 경우 output table에 데이타를 채운후 이 Method를 호출하나
       EXPORTING                                           "ALV Tree의 경우 null인 상태의  output table을 넘겨주워 화면을 display시킨다.
         is_hierarchy_header = l_hierarchy_header          "일반ALV에 [첫번째Column]을 계층적으로 사용하기 위한 Header정보를 받는다.
-
       CHANGING
         it_outtab           = ct_list1 "반드시 테이블은 Global 변수로 선언되어있어야 하며, 빈상태어야 한다.
         it_fieldcatalog     = ct_fcat1.  "FieldCatalog 1줄이라도 채워주어야 한다.
 
 
-    DATA : ls_treeinfo TYPE mty_s_treeinfo.
+    DATA : ls_treeinfo TYPE mty_s_treeinfo,
+           lt_treeicon TYPE mty_t_treeicon.
+
     DATA :lt_expand TYPE lvc_t_nkey.
     ls_treeinfo-fmkey = 'GUID'.
     ls_treeinfo-fname = 'NAME'.
@@ -229,12 +266,18 @@ CLASS lcl_controller IMPLEMENTATION.
         ct_nodes = lt_tree1
     ).
 
+    lt_treeicon = VALUE #(
+          ( gubn = 'N'  n_image = icon_closed_folder  exp_image = icon_open_folder )
+          ( gubn = 'T'  n_image = icon_database_table exp_image = icon_database_table )
+          ).
     CALL METHOD tree_draw
       EXPORTING
         is_fieldinfo = ls_treeinfo
+        it_fieldicon = lt_treeicon
       CHANGING
         co_tree      = co_tree1
         ct_data      = lt_tree1
+        ct_tree      = gt_list1
         ct_expand    = lt_expand.
 
     CALL METHOD go_tree1->frontend_update.

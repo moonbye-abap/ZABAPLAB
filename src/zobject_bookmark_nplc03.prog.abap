@@ -10,15 +10,23 @@ CLASS lcl_model IMPLEMENTATION.
     CREATE OBJECT lo_module.
     DATA(lt_select) = lo_module->get_fields( i_struc = 'ZOBJECTBOOK' ).
 
+*    SELECT *
+*      INTO TABLE @DATA(lt_1)
+*      FROM zobjectbook.
+*    DELETE zobjectbook FROM TABLE lt_1.
+
     SELECT (lt_select)
       INTO CORRESPONDING FIELDS OF TABLE ct_nodes
       FROM zobjectbook
      WHERE type IN ( 'N','T' )  "Node , Table
        AND usrid = i_usr
       .
+
     IF ct_nodes IS INITIAL.
-      APPEND VALUE #( guid = '1' usrid = sy-uname type = 'N' name = 'Root' description = 'Root' )
+      APPEND VALUE #( guid = ycl_commons=>get_uuidx16( ) usrid = sy-uname type = 'N' name = 'Root' description = 'Root' )
             TO ct_nodes.
+
+      CALL METHOD save_tree( ct_nodes ).
     ENDIF.
 
   ENDMETHOD.
@@ -36,6 +44,19 @@ CLASS lcl_model IMPLEMENTATION.
      WHERE type = 'M'  "Master
        AND usrid = i_usr
       .
+
+  ENDMETHOD.
+  METHOD save_tree.
+    DATA(lv_idx) = lines( it_tree ).
+    DATA(ls_tree) = it_tree[ lv_idx ].
+    DATA : lt_zobjectbook TYPE STANDARD TABLE OF zobjectbook,
+           ls_zobjectbook LIKE LINE OF lt_zobjectbook.
+
+    ls_zobjectbook = CORRESPONDING #( ls_tree ).
+    APPEND ls_zobjectbook TO lt_zobjectbook.
+
+    MODIFY zobjectbook FROM TABLE lt_zobjectbook.
+    ycl_commons=>commit(  ).
 
   ENDMETHOD.
 ENDCLASS.
