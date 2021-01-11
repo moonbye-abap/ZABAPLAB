@@ -3,24 +3,46 @@
 *&---------------------------------------------------------------------*
 
 CLASS lcl_event IMPLEMENTATION.
-  METHOD view_tree1_context_menu.
-* In this case the standard menu is cleared.
-    CALL METHOD menu->clear.
-* The next line defines one line of the context menu.
-    CALL METHOD menu->add_function
-      EXPORTING
-        fcode = 'APPEND'
-        text  = TEXT-001.        "Delete Subtree
-    CALL METHOD menu->add_function
-      EXPORTING
-        fcode = 'DELETE'
-        text  = TEXT-002.        "Delete Subtree
-  ENDMETHOD.
+
   METHOD constructor.
     CALL METHOD super->constructor( ).
     mv_gubn = i_gubn.
   ENDMETHOD.
+  METHOD handle_tree_on_drop.
+  endmethod.
 *======= Hot Spot Click Implementation
+  METHOD handle_tree_on_drag.
+*    DATA: dataobj       TYPE REF TO lcl_dragdropobj,
+*          l_node_key    TYPE lvc_nkey,
+*          l_sflight     TYPE sflight,
+*          l_node_text   TYPE lvc_value,
+*          l_node_layout TYPE lvc_s_layn.
+** § 6.Use your data object to transfer data between the events
+** § 6a.ON_DRAG
+** create and fill dataobject for event ON_DROP.
+*    CREATE OBJECT dataobj.
+*
+*    LOOP AT node_key_table INTO l_node_key.
+*      CALL METHOD sender->get_outtab_line
+*        EXPORTING
+*          i_node_key     = l_node_key
+*        IMPORTING
+*          e_outtab_line  = l_sflight
+*          e_node_text    = l_node_text
+*          es_node_layout = l_node_layout.
+*
+*      IF l_node_layout-isfolder NE 'X'.
+*        dataobj->wa_node_info-cp_node_key = l_node_key.
+*        dataobj->wa_node_info-cps_sflight = l_sflight.
+*        dataobj->wa_node_info-cp_node_text = l_node_text.
+*
+*        APPEND dataobj->wa_node_info TO dataobj->cp_t_node_info.
+*      ENDIF.
+*    ENDLOOP.
+*
+*    drag_drop_object->object = dataobj.
+  ENDMETHOD.
+
   METHOD handle_hotspot_click.
     CASE mv_gubn.
       WHEN 'SCR_0100'.

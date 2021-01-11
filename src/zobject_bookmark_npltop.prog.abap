@@ -65,7 +65,7 @@ CLASS : lcl_controller DEFINITION DEFERRED,  "MVC ( Controller )
         lcl_module     DEFINITION DEFERRED.  "Common Module
 DATA : go_control TYPE REF TO lcl_controller,
        go_module  TYPE REF TO lcl_module,
-
+       go_tree_assist1 type REF TO ycl_tree_assist,
        go_scr0100 TYPE REF TO lcl_scr0100,
        go_scr0200 TYPE REF TO lcl_scr0200,
 
@@ -120,6 +120,11 @@ DATA : gt_list1_delete TYPE gty_t_acc_table.
 DATA : gt_style_append TYPE lvc_t_styl.
 
 DATA : go_tree1   TYPE REF TO cl_gui_alv_tree,
+
+       "Drag & Drop용으로 선언한다.
+       go_drag    TYPE REF TO cl_dragdrop,
+       go_drop    TYPE REF TO cl_dragdrop,
+
        go_grid1   TYPE REF TO cl_gui_alv_grid,
        go_toolbar TYPE REF TO cl_gui_toolbar,
        gt_fcat1   TYPE lvc_t_fcat,
@@ -342,13 +347,13 @@ CLASS lcl_controller DEFINITION.
           !ct_data      TYPE STANDARD TABLE
           !ct_tree      TYPE STANDARD TABLE
           !ct_expand    TYPE STANDARD TABLE ,
-      grid_0100_display
-        CHANGING
-          co_tree1 TYPE REF TO cl_gui_alv_tree
-          ct_fcat1 TYPE lvc_t_fcat
-          ct_list1 TYPE gty_t_tree
-          ct_tree1 TYPE gty_t_tree
-        ,
+*      grid_0100_display
+*        CHANGING
+*          co_tree1 TYPE REF TO cl_gui_alv_tree
+*          ct_fcat1 TYPE lvc_t_fcat
+*          ct_list1 TYPE gty_t_tree
+*          ct_tree1 TYPE gty_t_tree
+*        ,
 
       fcat_0100_build
         IMPORTING
@@ -434,12 +439,20 @@ CLASS lcl_event DEFINITION INHERITING FROM cl_gui_object.
       handle_hotspot_click
                   FOR EVENT hotspot_click OF cl_gui_alv_grid
         IMPORTING e_row_id
-                  e_column_id.
+                  e_column_id,
+
+      handle_tree_on_drag
+      FOR EVENT on_drag_multiple
+                  OF cl_gui_alv_tree
+        IMPORTING sender node_key_table fieldname drag_drop_object,
+
+      handle_tree_on_drop
+      FOR EVENT on_drop
+                  OF cl_gui_alv_tree
+        IMPORTING sender node_key drag_drop_object.
+
   PRIVATE SECTION.
-    METHODS : view_tree1_context_menu
-      IMPORTING
-        menu     TYPE REF TO cl_ctmenu
-        node_key TYPE lvc_nkey.
+
 ENDCLASS.
 
 "Scree9000을 처리하기 위한 BUS Class를 선언한다.
@@ -468,8 +481,9 @@ CLASS lcl_scr0100 DEFINITION
   PRIVATE SECTION.
     METHODS pbo_init_create_container.
     METHODS pbo_init_event_process.
-    METHODS pbo_init_grid_value.
-    METHODS pbo_init_grid_display.
+    METHODS pbo_init_tree_value.
+    METHODS pbo_init_tree_dragdrop.
+    METHODS pbo_init_tree_display.
 ENDCLASS.
 
 "Scree0200을 처리하기 위한 BUS Class를 선언한다.

@@ -231,71 +231,87 @@ CLASS lcl_controller IMPLEMENTATION.
         ct_expand    = ct_expand.
     ct_data = <lt_data>.
   ENDMETHOD.
-  METHOD grid_0100_display.
-    DATA l_hierarchy_header TYPE treev_hhdr. "SET_TABLE_FOR_FIRST_DISPLAY 하면서 Header정보를 넣어주어야 하므로 구조체를 선언한다
-    l_hierarchy_header-heading = 'NODE'(300).    "ALV의 [첫번째 Column]을 계층적으로 만들어줄 Header정보
-    l_hierarchy_header-tooltip = 'NODE'(400).
-    l_hierarchy_header-width = 50.
-    l_hierarchy_header-width_pix = ' '.
-
-
-    DATA : ls_fcat TYPE lvc_s_fcat.
-    MODIFY ct_fcat1 FROM ls_fcat TRANSPORTING no_out WHERE fieldname > ' '.
-    CALL METHOD go_tree1->set_table_for_first_display   "일반 ALV의 경우 output table에 데이타를 채운후 이 Method를 호출하나
-      EXPORTING                                           "ALV Tree의 경우 null인 상태의  output table을 넘겨주워 화면을 display시킨다.
-        is_hierarchy_header = l_hierarchy_header          "일반ALV에 [첫번째Column]을 계층적으로 사용하기 위한 Header정보를 받는다.
-      CHANGING
-        it_outtab           = ct_list1 "반드시 테이블은 Global 변수로 선언되어있어야 하며, 빈상태어야 한다.
-        it_fieldcatalog     = ct_fcat1.  "FieldCatalog 1줄이라도 채워주어야 한다.
-
-
-    DATA : ls_treeinfo TYPE mty_s_treeinfo,
-           lt_treeicon TYPE mty_t_treeicon.
-
-    DATA :lt_expand TYPE lvc_t_nkey.
-    ls_treeinfo-fmkey = 'GUID'.
-    ls_treeinfo-fname = 'NAME'.
-    ls_treeinfo-fukey = 'PARENT_GUID'.
-    ls_treeinfo-fnode = 'NODE_KEY'.
-
-    DATA lt_tree1 TYPE gty_t_tree.
-    CALL METHOD lcl_model=>get_nodes(
-      EXPORTING
-        i_usr    = sy-uname
-      CHANGING
-        ct_nodes = lt_tree1
-    ).
-
-    lt_treeicon = VALUE #(
-          ( gubn = 'N'  n_image = icon_closed_folder  exp_image = icon_open_folder )
-          ( gubn = 'T'  n_image = icon_database_table exp_image = icon_database_table )
-          ).
-    CALL METHOD tree_draw
-      EXPORTING
-        is_fieldinfo = ls_treeinfo
-        it_fieldicon = lt_treeicon
-      CHANGING
-        co_tree      = co_tree1
-        ct_data      = lt_tree1
-        ct_tree      = gt_list1
-        ct_expand    = lt_expand.
-
-    CALL METHOD go_tree1->frontend_update.
-
-    CALL METHOD go_tree1->expand_nodes
-      EXPORTING
-        it_node_key             = lt_expand
-      EXCEPTIONS
-        failed                  = 1
-        cntl_system_error       = 2
-        error_in_node_key_table = 3
-        dp_error                = 4
-        node_not_found          = 5
-        OTHERS                  = 6.
-*
-*    DATA : lt_list2 TYPE gty_t_list.
-*      PERFORM fc_get_data_2nd CHANGING lt_list2.
-  ENDMETHOD.
+**  METHOD grid_0100_display.
+**    DATA l_hierarchy_header TYPE treev_hhdr. "SET_TABLE_FOR_FIRST_DISPLAY 하면서 Header정보를 넣어주어야 하므로 구조체를 선언한다
+**    l_hierarchy_header-heading = 'NODE'(300).    "ALV의 [첫번째 Column]을 계층적으로 만들어줄 Header정보
+**    l_hierarchy_header-tooltip = 'NODE'(400).
+**    l_hierarchy_header-width = 50.
+**    l_hierarchy_header-width_pix = ' '.
+**
+**
+**    DATA : ls_fcat TYPE lvc_s_fcat.
+**    MODIFY ct_fcat1 FROM ls_fcat TRANSPORTING no_out WHERE fieldname > ' '.
+**    CALL METHOD go_tree1->set_table_for_first_display   "일반 ALV의 경우 output table에 데이타를 채운후 이 Method를 호출하나
+**      EXPORTING                                           "ALV Tree의 경우 null인 상태의  output table을 넘겨주워 화면을 display시킨다.
+**        is_hierarchy_header = l_hierarchy_header          "일반ALV에 [첫번째Column]을 계층적으로 사용하기 위한 Header정보를 받는다.
+**      CHANGING
+**        it_outtab           = ct_list1 "반드시 테이블은 Global 변수로 선언되어있어야 하며, 빈상태어야 한다.
+**        it_fieldcatalog     = ct_fcat1.  "FieldCatalog 1줄이라도 채워주어야 한다.
+**
+**
+**
+**    DATA : ls_treeinfo TYPE ycl_tree_assist=>mty_s_treeinfo,
+**           lt_treeicon TYPE ycl_tree_assist=>mty_t_treeicon.
+**
+**    DATA :lt_expand TYPE lvc_t_nkey.
+**    ls_treeinfo-fmkey = 'GUID'.
+**    ls_treeinfo-fname = 'NAME'.
+**    ls_treeinfo-fukey = 'PARENT_GUID'.
+**    ls_treeinfo-fnode = 'NODE_KEY'.
+**
+**    lt_treeicon = VALUE #(
+**          ( gubn = 'N'  n_image = icon_closed_folder  exp_image = icon_open_folder )
+**          ( gubn = 'T'  n_image = icon_database_table exp_image = icon_database_table )
+**          ).
+**
+**    CREATE OBJECT go_tree_assist1
+**      EXPORTING
+**        io_tree     = go_tree1
+**        is_treeinfo = ls_treeinfo
+**        it_treeicon = lt_treeicon.
+**
+**
+**    DATA lt_tree1 TYPE gty_t_tree.
+**    CALL METHOD lcl_model=>get_nodes(
+**      EXPORTING
+**        i_usr    = sy-uname
+**      CHANGING
+**        ct_nodes = lt_tree1
+**    ).
+**
+***    CALL METHOD tree_draw
+***      EXPORTING
+***        is_fieldinfo = ls_treeinfo
+***        it_fieldicon = lt_treeicon
+***      CHANGING
+***        co_tree      = co_tree1
+***        ct_data      = lt_tree1
+***        ct_tree      = gt_list1
+***        ct_expand    = lt_expand.
+**
+**    CALL METHOD go_tree_assist1->draw
+**      CHANGING
+**        ct_expand = lt_expand
+**        ct_source = lt_tree1
+**        ct_tree   = gt_list1.
+**
+**
+**    CALL METHOD go_tree1->frontend_update.
+**
+**    CALL METHOD go_tree1->expand_nodes
+**      EXPORTING
+**        it_node_key             = lt_expand
+**      EXCEPTIONS
+**        failed                  = 1
+**        cntl_system_error       = 2
+**        error_in_node_key_table = 3
+**        dp_error                = 4
+**        node_not_found          = 5
+**        OTHERS                  = 6.
+***
+***    DATA : lt_list2 TYPE gty_t_list.
+***      PERFORM fc_get_data_2nd CHANGING lt_list2.
+**  ENDMETHOD.
   METHOD fcat_0100_build.
     "-----------------------------------------
     " Screen(100)의 Field Catalog를 생성한다.

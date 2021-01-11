@@ -114,16 +114,7 @@ CLASS lcl_scr0200 IMPLEMENTATION.
           RETURN.
         ENDIF.
         "노드로 화면에 추가한다.
-        CASE gs_tree_add-gubn.
-          WHEN 'N'.
-            ls_node_layout-n_image    = icon_closed_folder.
-            ls_node_layout-exp_image  = icon_open_folder.
-            ls_node_layout-isfolder = gc_x.
-          WHEN 'T'.
-            ls_node_layout-n_image    = icon_database_table.
-            ls_node_layout-exp_image  = icon_database_table.
-            ls_node_layout-isfolder = ' '.
-        ENDCASE.
+
         "DB에 저장할 내역을 생성한다.
         READ TABLE gt_list1 INTO ls_list1 WITH KEY node_key = gs_tree_add-node.
         IF sy-subrc = 0.
@@ -136,33 +127,21 @@ CLASS lcl_scr0200 IMPLEMENTATION.
         ENDIF.
 
         "Node를 추가한다.
-        CALL METHOD ycl_commons=>tree_add_one_node_child
+        CALL METHOD go_tree_assist1->add_one_node_child
           EXPORTING
-            i_fn_node        = 'NODE_KEY'
             i_relat_node_key = gs_tree_add-node
             i_node_text      = gs_tree_add-name
-            is_node_layout   = ls_node_layout
             is_outtab_line   = ls_list1
           IMPORTING
             e_new_node_key   = DATA(lv_nkey_rtn)
           CHANGING
-            co_tree          = go_tree1
-            ct_data          = gt_list1.
+            ct_tree          = gt_list1.
 
         "DB에 반영한다.
         CALL METHOD lcl_model=>save_tree( gt_list1 ).
         leave( ).
       WHEN OTHERS.
         MESSAGE s000 WITH iv_function_code.
-        CALL METHOD go_tree1->get_selected_nodes
-          CHANGING
-            ct_selected_nodes = lt_node.
-        CALL METHOD go_tree1->get_selected_item
-          IMPORTING
-            e_fieldname     = DATA(lv_fieldname)
-            e_selected_node = DATA(lv_node).
-
-*       BREAK-POINT.
 
     ENDCASE.
   ENDMETHOD.

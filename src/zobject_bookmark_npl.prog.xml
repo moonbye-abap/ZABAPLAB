@@ -460,7 +460,7 @@
     <item>
      <ID>I</ID>
      <KEY>E01</KEY>
-     <ENTRY>Node를 먼저 선택해 주세요</ENTRY>
+     <ENTRY>Node 1개를 먼저 선택해 주세요</ENTRY>
      <LENGTH>26</LENGTH>
     </item>
     <item>
@@ -480,6 +480,12 @@
      <KEY>E04</KEY>
      <ENTRY>Root는 제거할 수 없습니다.</ENTRY>
      <LENGTH>27</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>E05</KEY>
+     <ENTRY>Node를 선택해 주세요.</ENTRY>
+     <LENGTH>24</LENGTH>
     </item>
     <item>
      <ID>R</ID>
