@@ -48,6 +48,15 @@ CLASS lcl_scr0100 IMPLEMENTATION.
         leave( ).
       WHEN gc_function_code_cancel.
         LEAVE PROGRAM.
+      WHEN 'DRAGDROP1'.
+        READ TABLE ycl_tree_assist=>mt_dragdrop_nodes_change INTO DATA(ls_data) WITH KEY tree = go_tree1.
+        IF sy-subrc = 0.
+          LOOP AT ls_data-bags INTO DATA(ls_node).
+            UPDATE zobjectbook SET parent_guid = ls_node-umkey WHERE guid = ls_node-mkey.
+          ENDLOOP.
+          ycl_commons=>commit( ).
+        ENDIF.
+
       WHEN 'APPEND'.
         CLEAR : gs_tree_add-name, gs_tree_add-description.
         lt_node = go_tree_assist1->get_selected_nodes( ).
@@ -360,8 +369,8 @@ CLASS lcl_scr0100 IMPLEMENTATION.
 
 
       lt_treeicon = VALUE #(
-            ( gubn = 'N'  n_image = icon_closed_folder  exp_image = icon_open_folder )
-            ( gubn = 'T'  n_image = icon_database_table exp_image = icon_database_table )
+            ( gubn = 'N'  n_image = icon_closed_folder  exp_image = icon_open_folder     isfolder = gc_x )
+            ( gubn = 'T'  n_image = icon_database_table exp_image = icon_database_table  isfolder = space )
             ).
 
       DATA lt_tree1 TYPE gty_t_tree.
@@ -372,13 +381,17 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           ct_nodes = lt_tree1
       ).
 
+      GET REFERENCE OF gt_list1 INTO DATA(lr_tree1).
       CREATE OBJECT go_tree_assist1
         EXPORTING
-          io_tree        = go_tree1
-          is_treeinfo    = ls_treeinfo
-          it_treeicon    = lt_treeicon
-          it_toolbar     = lt_toolbar
-          it_contextmenu = lt_contextmenu.
+          is_treeinfo      = ls_treeinfo
+          it_tree          = lr_tree1
+          io_tree          = go_tree1
+          i_dragdrop       = gc_x
+          i_dragdrop_fcode = 'DRAGDROP1'
+          it_treeicon      = lt_treeicon
+          it_toolbar       = lt_toolbar
+          it_contextmenu   = lt_contextmenu.
 
 
       CALL METHOD go_tree_assist1->draw
