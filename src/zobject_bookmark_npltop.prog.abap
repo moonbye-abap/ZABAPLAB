@@ -63,13 +63,13 @@ CLASS : lcl_controller DEFINITION DEFERRED,  "MVC ( Controller )
         lcl_scr0200    DEFINITION DEFERRED,  "BUS Screen framework( 0100 )
         lcl_event      DEFINITION DEFERRED,  "Event Receiver
         lcl_module     DEFINITION DEFERRED.  "Common Module
-DATA : go_control TYPE REF TO lcl_controller,
-       go_module  TYPE REF TO lcl_module,
-       go_tree_assist1 type REF TO ycl_tree_assist,
-       go_scr0100 TYPE REF TO lcl_scr0100,
-       go_scr0200 TYPE REF TO lcl_scr0200,
+DATA : go_control      TYPE REF TO lcl_controller,
+       go_module       TYPE REF TO lcl_module,
+       go_tree_assist1 TYPE REF TO ycl_tree_assist,
+       go_scr0100      TYPE REF TO lcl_scr0100,
+       go_scr0200      TYPE REF TO lcl_scr0200,
 
-       go_event   TYPE REF TO lcl_event.
+       go_event        TYPE REF TO lcl_event.
 
 *&---------------------------------------------------------------------*
 * Global [TYPES]
@@ -87,7 +87,10 @@ TYPES: BEGIN OF gty_s_tree.
          TYPES : spras_nm TYPE fieldname,
          node_key TYPE lvc_nkey,
        END OF gty_s_tree,
-       gty_t_tree TYPE STANDARD TABLE OF gty_s_tree.
+       gty_t_tree TYPE STANDARD TABLE OF gty_s_tree
+        WITH UNIQUE HASHED KEY id   COMPONENTS guid
+        WITH NON-UNIQUE SORTED KEY node COMPONENTS node_key
+       .
 
 TYPES : gty_t_acc_table TYPE STANDARD TABLE OF zobjectbook.
 
@@ -113,7 +116,7 @@ DATA : gv_ok_code1 TYPE sy-ucomm,
 *DATA : go_cont_tree1 TYPE REF TO cl_gui_container,
 *       go_cont_grid1 TYPE REF TO cl_gui_container.
 
-DATA : gt_list1 TYPE gty_t_tree,
+DATA : gt_list1 TYPE gty_t_tree ,
        gt_tree1 TYPE gty_t_tree.
 
 DATA : gt_list1_delete TYPE gty_t_acc_table.
@@ -136,10 +139,13 @@ DATA : go_tree1   TYPE REF TO cl_gui_alv_tree,
 
 
 TYPES : BEGIN OF gty_s_tree_add ,
+          ismodify    TYPE c,
           node        TYPE lvc_nkey,
-          gubn        TYPE zobjectbook-type,
+          guid        type zobjectbook-guid,
+          type        TYPE zobjectbook-type,
           name        TYPE zobjectbook-name,
           description TYPE zobjectbook-description,
+          zorder      TYPE zobjectbook-zorder,
         END OF gty_s_tree_add.
 DATA : gs_tree_add TYPE gty_s_tree_add .
 
@@ -372,6 +378,9 @@ CLASS lcl_model DEFINITION.
       save_tree
         IMPORTING
           it_tree TYPE gty_t_tree,
+      update_tree
+        IMPORTING
+          is_tree TYPE gty_s_tree,
       get_acc_table
         IMPORTING i_usr        TYPE sy-uname
         CHANGING  ct_acc_table TYPE gty_t_acc_table,

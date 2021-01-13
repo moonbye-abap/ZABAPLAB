@@ -25,7 +25,7 @@ CLASS lcl_scr0200 IMPLEMENTATION.
       ENDING AT iv_xend iv_yend.
   ENDMETHOD.
   METHOD pov_name.
-    DATA(lv_bugn) = ycl_commons=>read_scr_field( i_fieldname = 'GS_TREE_ADD-GUBN' ).
+    DATA(lv_bugn) = ycl_commons=>read_scr_field( i_fieldname = 'GS_TREE_ADD-TYPE' ).
     DATA(lv_name) = ycl_commons=>read_scr_field( i_fieldname = 'GS_TREE_ADD-NAME' ).
     CHECK lv_bugn = gc_t.
     IF lv_name IS INITIAL.
@@ -50,6 +50,7 @@ CLASS lcl_scr0200 IMPLEMENTATION.
     ).
 
     "Description을 갱신해 준다.
+    CHECK lt_rtn is not INITIAL.
     lv_name = lt_rtn[ 1 ]-fieldval.
     SELECT SINGLE ddtext
       INTO @gs_tree_add-description
@@ -72,7 +73,7 @@ CLASS lcl_scr0200 IMPLEMENTATION.
 
 
     IF gv_first IS NOT INITIAL.
-      lv_id = 'GS_TREE_ADD-GUBN'. "gs_tree_add-gubn
+      lv_id = 'GS_TREE_ADD-TYPE'. "gs_tree_add-type
       lt_values = VALUE #(
                   ( key = 'N' text = 'Node' )
                   ( key = 'T' text = 'Table' )
@@ -88,6 +89,14 @@ CLASS lcl_scr0200 IMPLEMENTATION.
 * Implement suitable error handling here
       ENDIF.
 
+    ENDIF.
+    IF gs_tree_add-ismodify = gc_x.
+      LOOP AT SCREEN .
+        IF screen-name = 'GS_TREE_ADD-TYPE'.
+          screen-input = 0.
+        ENDIF.
+        MODIFY SCREEN.
+      ENDLOOP.
     ENDIF.
 
     set_status( iv_status_key = 'PF_0200' ).
@@ -108,37 +117,59 @@ CLASS lcl_scr0200 IMPLEMENTATION.
       WHEN gc_function_code_cancel.
         LEAVE PROGRAM.
       WHEN 'SAVE'.
-        IF gs_tree_add-gubn IS INITIAL OR
+        IF gs_tree_add-type IS INITIAL OR
            gs_tree_add-name IS INITIAL.
           MESSAGE s000 WITH TEXT-e03 DISPLAY LIKE gc_e.
           RETURN.
         ENDIF.
         "노드로 화면에 추가한다.
 
-        "DB에 저장할 내역을 생성한다.
-        READ TABLE gt_list1 INTO ls_list1 WITH KEY node_key = gs_tree_add-node.
-        IF sy-subrc = 0.
-          ls_list1-parent_guid = ls_list1-guid.
-          ls_list1-guid  = ycl_commons=>get_uuidx16( ).
-          ls_list1-usrid = sy-uname.
-          ls_list1-type = gs_tree_add-gubn.
-          ls_list1-name = gs_tree_add-name.
-          ls_list1-description = gs_tree_add-description.
+        IF gs_tree_add-guid IS INITIAL.
+          "신규추가
+          "DB에 저장할 내역을 생성한다.
+          ls_list1 = gt_list1[ key node COMPONENTS node_key = gs_tree_add-node ].
+*          READ TABLE gt_list1 INTO ls_list1 WITH KEY node_key = gs_tree_add-node.
+          IF sy-subrc = 0.
+            ls_list1-parent_guid = ls_list1-guid.
+            ls_list1-guid  = ycl_commons=>get_uuidx16( ).
+            ls_list1-usrid = sy-uname.
+            ls_list1-type = gs_tree_add-type.
+            ls_list1-name = gs_tree_add-name.
+            ls_list1-description = gs_tree_add-description.
+            ls_list1-zorder = gs_tree_add-zorder.
+          ENDIF.
+
+          "Node를 추가한다.
+          CALL METHOD go_tree_assist1->add_one_node_child
+            EXPORTING
+              i_relat_node_key = gs_tree_add-node
+              i_node_text      = gs_tree_add-name
+              is_outtab_line   = ls_list1
+            IMPORTING
+              e_new_node_key   = DATA(lv_nkey_rtn).
+
+
+          "DB에 반영한다.
+          CALL METHOD lcl_model=>save_tree( gt_list1 ).
+        ELSE.
+          "수정..
+          ls_list1 = VALUE #( gt_list1[ KEY id COMPONENTS guid = gs_tree_add-guid  ] DEFAULT ls_list1  ).
+          CHECK sy-subrc = 0.
+          ls_list1 = CORRESPONDING #( BASE ( ls_list1 )  gs_tree_add ).
+          CALL METHOD go_tree1->change_node
+            EXPORTING
+              i_node_key     = gs_tree_add-node
+              i_outtab_line  = ls_list1
+              i_u_node_text  = CONV #( gs_tree_add-name )
+              i_node_text    = CONV #( gs_tree_add-name )
+            EXCEPTIONS
+              node_not_found = 1.
+          if sy-subrc = 0.
+            CALL METHOD go_tree1->frontend_update( ).
+            "DB에 반영한다.
+            CALL METHOD lcl_model=>update_tree( ls_list1 ).
+          endif.
         ENDIF.
-
-        "Node를 추가한다.
-        CALL METHOD go_tree_assist1->add_one_node_child
-          EXPORTING
-            i_relat_node_key = gs_tree_add-node
-            i_node_text      = gs_tree_add-name
-            is_outtab_line   = ls_list1
-          IMPORTING
-            e_new_node_key   = DATA(lv_nkey_rtn)
-          CHANGING
-            ct_tree          = gt_list1.
-
-        "DB에 반영한다.
-        CALL METHOD lcl_model=>save_tree( gt_list1 ).
         leave( ).
       WHEN OTHERS.
         MESSAGE s000 WITH iv_function_code.

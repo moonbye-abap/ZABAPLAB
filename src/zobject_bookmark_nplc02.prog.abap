@@ -326,6 +326,12 @@ CLASS lcl_controller IMPLEMENTATION.
 *######################################################################*
     LOOP AT ct_fcat1 INTO ls_fcat.
       CASE ls_fcat-fieldname.
+        WHEN 'ZORDER'.
+          ls_fcat-col_pos  = 5.
+          ls_fcat-outputlen = 8.
+          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = '순번' CHANGING cs_fcat = ls_fcat ).
+          ls_fcat-key      = gc_x.
+
         WHEN 'DESCRIPTION'.
           ls_fcat-col_pos  = 10.
           ls_fcat-outputlen = 50.

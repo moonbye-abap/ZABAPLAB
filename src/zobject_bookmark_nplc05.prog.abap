@@ -37,7 +37,8 @@ CLASS lcl_scr0100 IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD handle_pai.
-    DATA lt_node TYPE lvc_t_nkey.
+    DATA : lt_node  TYPE lvc_t_nkey,
+           ls_list1 LIKE LINE OF gt_list1.
 
     CASE iv_function_code.
         " For the default GUI Status, global constants can be used to evaluate the function code.
@@ -48,6 +49,21 @@ CLASS lcl_scr0100 IMPLEMENTATION.
         leave( ).
       WHEN gc_function_code_cancel.
         LEAVE PROGRAM.
+      WHEN 'REFRESH'.
+        DATA : lt_expand TYPE lvc_t_nkey.
+        CALL METHOD go_tree_assist1->redraw( CHANGING ct_expand = lt_expand ).
+        CALL METHOD go_tree1->frontend_update.
+
+        CALL METHOD go_tree1->expand_nodes
+          EXPORTING
+            it_node_key             = lt_expand
+          EXCEPTIONS
+            failed                  = 1
+            cntl_system_error       = 2
+            error_in_node_key_table = 3
+            dp_error                = 4
+            node_not_found          = 5
+            OTHERS                  = 6.
       WHEN 'DRAGDROP1'.
         READ TABLE ycl_tree_assist=>mt_dragdrop_nodes_change INTO DATA(ls_data) WITH KEY tree = go_tree1.
         IF sy-subrc = 0.
@@ -57,8 +73,31 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           ycl_commons=>commit( ).
         ENDIF.
 
+      WHEN 'MODIFY'.
+        lt_node = go_tree_assist1->get_selected_nodes( ).
+        IF lines( lt_node ) <> 1.
+          MESSAGE s000 WITH TEXT-e01.
+          RETURN.
+        ENDIF.
+        gs_tree_add-node = lt_node[ 1 ].
+        ls_list1 = gt_list1[ KEY node COMPONENTS node_key = gs_tree_add-node ].
+        CHECK sy-subrc = 0.
+        gs_tree_add = CORRESPONDING #( BASE ( gs_tree_add ) ls_list1 ).
+        gs_tree_add-ismodify = gc_x.
+
+        cl_bus_abstract_screen=>get_screen(
+          EXPORTING
+            iv_program_name  = sy-repid
+            iv_dynpro_number = '0200'
+          IMPORTING
+            ev_screen        = go_scr0200
+        ).
+
+        IF go_scr0200 IS BOUND.
+          CALL METHOD go_scr0200->show_as_popup( ).
+        ENDIF.
       WHEN 'APPEND'.
-        CLEAR : gs_tree_add-name, gs_tree_add-description.
+        CLEAR : gs_tree_add-name, gs_tree_add-description, gs_tree_add-ismodify.
         lt_node = go_tree_assist1->get_selected_nodes( ).
         IF lines( lt_node ) <> 1.
           MESSAGE s000 WITH TEXT-e01.
@@ -98,7 +137,6 @@ CLASS lcl_scr0100 IMPLEMENTATION.
         CALL METHOD go_tree_assist1->delete_subtree
           EXPORTING
             it_node         = lt_node
-            it_tree         = gt_list1
           IMPORTING
             et_tree_deleted = lt_list1_deleted.
 
@@ -354,16 +392,21 @@ CLASS lcl_scr0100 IMPLEMENTATION.
       ls_treeinfo-ficon = 'TYPE'.
       ls_treeinfo-fukey = 'PARENT_GUID'.
       ls_treeinfo-fnode = 'NODE_KEY'.
+      ls_treeinfo-fsort = 'ZORDER'.
 
       lt_toolbar = VALUE #(
             ( fcode = 'APPEND'  icon = icon_insert_row text ='추가'   quickinfo ='추가' ufcode = '' )
+            ( fcode = 'MODIFY'  icon = icon_write_file     text ='수정'   quickinfo ='수정' ufcode = '' )
             ( fcode = 'DELETE'  icon = icon_delete_row text ='삭제'   quickinfo ='삭제' ufcode = '' )
-*            ( fcode = '-' )
-*            ( fcode = 'SAVE'    icon = icon_system_save text ='저장'   quickinfo ='저장' ufcode = '' )
+            ( fcode = '-' )
+            ( fcode = 'REXXX'     icon = icon_refresh      text ='재설정'       quickinfo ='재설정'      ufcode = '' )
+            ( fcode = 'REORDER'   icon = ' '     text ='ReOrder'    quickinfo ='ReOrder'   ufcode = 'REXXX' )
+            ( fcode = 'REFRESH'   icon = ' '         text ='Refresh'    quickinfo ='Refresh'   ufcode = 'REXXX' )
             ).
 
       lt_contextmenu = VALUE #(
             ( fcode = 'APPEND'  icon = icon_insert_row text ='추가'   quickinfo ='추가' ufcode = '' )
+            ( fcode = 'MODIFY'  icon = icon_write_file     text ='수정'   quickinfo ='수정' ufcode = '' )
             ( fcode = 'DELETE'  icon = icon_delete_row text ='삭제'   quickinfo ='삭제' ufcode = '' )
             ).
 
@@ -395,10 +438,11 @@ CLASS lcl_scr0100 IMPLEMENTATION.
 
 
       CALL METHOD go_tree_assist1->draw
+        EXPORTING
+          it_source = lt_tree1
         CHANGING
-          ct_expand = lt_expand
-          ct_source = lt_tree1
-          ct_tree   = gt_list1.
+          ct_expand = lt_expand.
+
 
 
 *      CALL METHOD go_tree1->update_calculations.

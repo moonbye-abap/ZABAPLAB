@@ -59,4 +59,15 @@ CLASS lcl_model IMPLEMENTATION.
     ycl_commons=>commit(  ).
 
   ENDMETHOD.
+  METHOD update_tree.
+    DATA : lt_zobjectbook TYPE STANDARD TABLE OF zobjectbook,
+           ls_zobjectbook LIKE LINE OF lt_zobjectbook.
+
+    ls_zobjectbook = CORRESPONDING #( is_tree ).
+    APPEND ls_zobjectbook TO lt_zobjectbook.
+
+    MODIFY zobjectbook FROM TABLE lt_zobjectbook.
+    ycl_commons=>commit(  ).
+
+  ENDMETHOD.
 ENDCLASS.
