@@ -23,7 +23,7 @@ CLASS lcl_model IMPLEMENTATION.
       .
 
     IF ct_nodes IS INITIAL.
-      APPEND VALUE #( guid = ycl_commons=>get_uuidx16( ) usrid = sy-uname type = 'N' name = 'Root' description = 'Root' )
+      APPEND VALUE #( guid = lcl_module=>get_uuidx16( ) usrid = sy-uname type = 'N' name = 'Root' description = 'Root' )
             TO ct_nodes.
 
       CALL METHOD save_tree( ct_nodes ).
@@ -56,7 +56,7 @@ CLASS lcl_model IMPLEMENTATION.
     APPEND ls_zobjectbook TO lt_zobjectbook.
 
     MODIFY zobjectbook FROM TABLE lt_zobjectbook.
-    ycl_commons=>commit(  ).
+    lcl_module=>commit( ).
 
   ENDMETHOD.
   METHOD update_tree.
@@ -67,7 +67,7 @@ CLASS lcl_model IMPLEMENTATION.
     APPEND ls_zobjectbook TO lt_zobjectbook.
 
     MODIFY zobjectbook FROM TABLE lt_zobjectbook.
-    ycl_commons=>commit(  ).
+    lcl_module=>commit( ).
 
   ENDMETHOD.
 ENDCLASS.

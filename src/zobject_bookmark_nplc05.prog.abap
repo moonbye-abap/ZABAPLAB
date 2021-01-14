@@ -38,7 +38,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
 
   METHOD handle_pai.
     DATA : lt_node  TYPE lvc_t_nkey,
-           ls_list1 LIKE LINE OF gt_list1.
+           ls_list1 LIKE LINE OF gt_tree1.
 
     CASE iv_function_code.
         " For the default GUI Status, global constants can be used to evaluate the function code.
@@ -65,12 +65,12 @@ CLASS lcl_scr0100 IMPLEMENTATION.
             node_not_found          = 5
             OTHERS                  = 6.
       WHEN 'DRAGDROP1'.
-        READ TABLE ycl_tree_assist=>mt_dragdrop_nodes_change INTO DATA(ls_data) WITH KEY tree = go_tree1.
+        READ TABLE lcl_tree_assist=>mt_dragdrop_nodes_change INTO DATA(ls_data) WITH KEY tree = go_tree1.
         IF sy-subrc = 0.
           LOOP AT ls_data-bags INTO DATA(ls_node).
             UPDATE zobjectbook SET parent_guid = ls_node-umkey WHERE guid = ls_node-mkey.
           ENDLOOP.
-          ycl_commons=>commit( ).
+          lcl_module=>commit( ).
         ENDIF.
 
       WHEN 'MODIFY'.
@@ -80,7 +80,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           RETURN.
         ENDIF.
         gs_tree_add-node = lt_node[ 1 ].
-        ls_list1 = gt_list1[ KEY node COMPONENTS node_key = gs_tree_add-node ].
+        ls_list1 = gt_tree1[ KEY node COMPONENTS node_key = gs_tree_add-node ].
         CHECK sy-subrc = 0.
         gs_tree_add = CORRESPONDING #( BASE ( gs_tree_add ) ls_list1 ).
         gs_tree_add-ismodify = gc_x.
@@ -97,7 +97,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           CALL METHOD go_scr0200->show_as_popup( ).
         ENDIF.
       WHEN 'APPEND'.
-        CLEAR : gs_tree_add-name, gs_tree_add-description, gs_tree_add-ismodify.
+        CLEAR : gs_tree_add-name,  gs_tree_add-guid, gs_tree_add-description, gs_tree_add-ismodify.
         lt_node = go_tree_assist1->get_selected_nodes( ).
         IF lines( lt_node ) <> 1.
           MESSAGE s000 WITH TEXT-e01.
@@ -121,8 +121,6 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           MESSAGE s000 WITH TEXT-e05.
           RETURN.
         ENDIF.
-        DATA(lv_ans) = ycl_commons=>ask_question( i_question = '정말로 삭제하시겠습니까?' ).
-        CHECK lv_ans = '1'.
         SORT lt_node.
         DATA(lv_node) = lt_node[ 1 ].
         CONDENSE lv_node.
@@ -130,6 +128,10 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           MESSAGE s000 WITH TEXT-e04 DISPLAY LIKE gc_e.
           RETURN.
         ENDIF.
+
+
+        DATA(lv_ans) = lcl_module=>ask_question( i_question = '정말로 삭제하시겠습니까?' ).
+        CHECK lv_ans = '1'.
 
         DATA : lt_list1_deleted TYPE gty_t_tree,
                lt_zobjectbook   TYPE STANDARD TABLE OF zobjectbook.
@@ -142,7 +144,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
 
         lt_zobjectbook = CORRESPONDING #( lt_list1_deleted ).
         DELETE zobjectbook FROM TABLE lt_zobjectbook.
-        ycl_commons=>commit( ).
+        lcl_module=>commit( ).
 
 
       WHEN OTHERS.
@@ -191,7 +193,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           node_selection_mode = cl_gui_column_tree=>node_sel_mode_multiple
           no_html_header      = gc_x.
 
-      CREATE OBJECT go_grid1
+      CREATE OBJECT go_grid2
         EXPORTING
           i_parent = go_right.
 
@@ -203,7 +205,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
 *    CALL METHOD go_control->define_0100_event_process(
 *      CHANGING
 *        co_event = lr_event
-*        co_grid1 = go_grid1
+*        co_grid1 = go_grid2
 *    ).
 *    PERFORM define_0100_event_process.
 **
@@ -217,79 +219,49 @@ CLASS lcl_scr0100 IMPLEMENTATION.
 
   METHOD pbo_init_event_process.
     IF gv_first IS INITIAL.
-*      CREATE OBJECT go_event
-*        EXPORTING
-*          i_gubn = 'SCR_TREE1'.
-*      .
-*
-*      "TREE1
-*      SET HANDLER go_event->handle_node_cm_req        "Context Menu Request
-*              FOR go_tree1.
-*      SET HANDLER go_event->handle_node_cm_sel        "Context Menu Selected
-*              FOR go_tree1.
-*      SET HANDLER go_event->handle_item_cm_req        "Context Menu Request
-*              FOR go_tree1.
-*      SET HANDLER go_event->handle_item_cm_sel        "Context Menu Request
-*              FOR go_tree1.
-*
-*
-*      "go_tree1의 가지고 있는 기존 event정보를 획득한다.
-*      CALL METHOD go_tree1->get_registered_events
-*        IMPORTING
-*          events = DATA(lt_event).
-*
-*      "eventid에 context menu 요청의 번호를 추가해 준다.
-*      APPEND VALUE #( eventid = cl_gui_column_tree=>eventid_node_context_menu_req ) TO lt_event.
-*      APPEND VALUE #( eventid = cl_gui_column_tree=>eventid_item_context_menu_req ) TO lt_event.
-*      APPEND VALUE #( eventid = cl_gui_column_tree=>eventid_node_context_menu_req ) TO lt_event.
-*      APPEND VALUE #( eventid = cl_gui_column_tree=>eventid_item_context_menu_req ) TO lt_event.
-*
-*      "go_tree1의 추가된 event set정보를 등록해 준다.
-*      CALL METHOD go_tree1->set_registered_events
-*        EXPORTING
-*          events = lt_event.
-
 
       CREATE OBJECT go_event
         EXPORTING
-          i_gubn = 'SCR_GRID1'.
+          i_gubn = 'SCR_TREE1'.
+
+      SET HANDLER go_event->handle_node_double_click
+              FOR go_tree1.
+
+      CALL METHOD go_tree1->get_registered_events( IMPORTING events = DATA(lt_event) ).
+      APPEND VALUE #( eventid = cl_gui_column_tree=>eventid_node_double_click ) TO lt_event.
+      call method go_tree1->set_registered_events( EXPORTING events = lt_event ).
+
+      CREATE OBJECT go_event
+        EXPORTING
+          i_gubn = 'SCR_GRID2'.
       .
 
       "GRID1
-      SET HANDLER go_event->handle_hotspot_click        "hotspot Triggered
-              FOR go_grid1.
+      SET HANDLER go_event->handle_double_click        "hotspot Triggered
+              FOR go_grid2.
 
 *  HANDLE_DATA_CHANGED events are excuted when ALV Grid data changed
-      CALL METHOD go_grid1->register_edit_event
+      CALL METHOD go_grid2->register_edit_event
         EXPORTING
           i_event_id = cl_gui_alv_grid=>mc_evt_enter.       "By Enter
 
-      CALL METHOD go_grid1->register_edit_event
+      CALL METHOD go_grid2->register_edit_event
         EXPORTING
           i_event_id = cl_gui_alv_grid=>mc_evt_modified.    "By Changed
 
 
 
-* * Create Event Handler
-* *  IF go_event IS INITIAL.
-*   CREATE OBJECT go_event
-*     EXPORTING
-*       i_gubn = 'SCR_0200'.
-*   .
-* *  ENDIF.
-*   SET HANDLER go_event->handle_hotspot_click        "hotspot Triggered
-*           FOR go_grid2.
-*   SET HANDLER go_event->handle_toolbar
-*           FOR go_grid2.
+   SET HANDLER go_event->handle_toolbar
+           FOR go_grid2.
 *   SET HANDLER go_event->handle_user_command
-*           FOR go_grid2.
+*           FOR go_tree1.
 *   SET HANDLER go_event->handle_onf4
-*           FOR go_grid2.
+*           FOR go_tree1.
 * *  SET HANDLER go_event->handle_data_changed_finished
-* *          FOR go_grid2.
+* *          FOR go_tree1.
 *   SET HANDLER go_event->handle_data_changed
-*           FOR go_grid2.
-*
+*           FOR go_tree1.
+**
 *
 *
 * * HANDLE_DATA_CHANGED events are excuted when ALV Grid data changed
@@ -332,9 +304,9 @@ CLASS lcl_scr0100 IMPLEMENTATION.
     IF gv_first IS INITIAL.
 *.............> Define Field category attributes
 **               -----------------------
-      CALL METHOD go_control->fcat_0100_build(
+      CALL METHOD go_control->scr100_tree1_fcat_build(
         EXPORTING
-          it_list1 = gt_list1
+          it_list1 = gt_tree1
         CHANGING
           ct_fcat1 = gt_fcat1
       ).
@@ -342,13 +314,16 @@ CLASS lcl_scr0100 IMPLEMENTATION.
 *.............> Define ALV Standard button attributes
 *               -----------------------
       gt_exld1          =  lcl_module=>get_excl_buttons( ).
-      gs_layo1          =  lcl_module=>get_layout( it_tab  = gt_list1 ).
+      gs_layo1          =  lcl_module=>get_layout( it_tab  = gt_tree1 ).
       gs_vari1-report   =  lcl_module=>get_variant( i_name = 'go_tree1' ).
 *
 *    IF gv_prg_mode <> gc_prg_mode_display.
 *      PERFORM fc_set_style_base    USING   gt_fcat2
 *                                CHANGING  gt_style_append.
 *    ENDIF.
+
+
+
     ENDIF.
   ENDMETHOD.
   METHOD pbo_init_tree_display.
@@ -366,7 +341,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
         EXPORTING                                           "ALV Tree의 경우 null인 상태의  output table을 넘겨주워 화면을 display시킨다.
           is_hierarchy_header = l_hierarchy_header          "일반ALV에 [첫번째Column]을 계층적으로 사용하기 위한 Header정보를 받는다.
         CHANGING
-          it_outtab           = gt_list1 "반드시 테이블은 Global 변수로 선언되어있어야 하며, 빈상태어야 한다.
+          it_outtab           = gt_tree1 "반드시 테이블은 Global 변수로 선언되어있어야 하며, 빈상태어야 한다.
           it_fieldcatalog     = gt_fcat1.  "FieldCatalog 1줄이라도 채워주어야 한다.
 
 
@@ -381,10 +356,10 @@ CLASS lcl_scr0100 IMPLEMENTATION.
 *      GITA3  ,                  , 버튼3  , 버튼3       , GITA
 
 
-      DATA : lt_toolbar     TYPE ycl_tree_assist=>mty_t_toolbar,
-             lt_contextmenu TYPE ycl_tree_assist=>mty_t_toolbar.
-      DATA : ls_treeinfo TYPE ycl_tree_assist=>mty_s_treeinfo,
-             lt_treeicon TYPE ycl_tree_assist=>mty_t_treeicon.
+      DATA : lt_toolbar     TYPE lcl_tree_assist=>mty_t_toolbar,
+             lt_contextmenu TYPE lcl_tree_assist=>mty_t_toolbar.
+      DATA : ls_treeinfo TYPE lcl_tree_assist=>mty_s_treeinfo,
+             lt_treeicon TYPE lcl_tree_assist=>mty_t_treeicon.
       DATA :lt_expand TYPE lvc_t_nkey.
 
       ls_treeinfo-fmkey = 'GUID'.
@@ -399,9 +374,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
             ( fcode = 'MODIFY'  icon = icon_write_file     text ='수정'   quickinfo ='수정' ufcode = '' )
             ( fcode = 'DELETE'  icon = icon_delete_row text ='삭제'   quickinfo ='삭제' ufcode = '' )
             ( fcode = '-' )
-            ( fcode = 'REXXX'     icon = icon_refresh      text ='재설정'       quickinfo ='재설정'      ufcode = '' )
-            ( fcode = 'REORDER'   icon = ' '     text ='ReOrder'    quickinfo ='ReOrder'   ufcode = 'REXXX' )
-            ( fcode = 'REFRESH'   icon = ' '         text ='Refresh'    quickinfo ='Refresh'   ufcode = 'REXXX' )
+            ( fcode = 'REFRESH'   icon = icon_refresh         text ='Refresh'    quickinfo ='Refresh'   )
             ).
 
       lt_contextmenu = VALUE #(
@@ -424,7 +397,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           ct_nodes = lt_tree1
       ).
 
-      GET REFERENCE OF gt_list1 INTO DATA(lr_tree1).
+      GET REFERENCE OF gt_tree1 INTO DATA(lr_tree1).
       CREATE OBJECT go_tree_assist1
         EXPORTING
           is_treeinfo      = ls_treeinfo

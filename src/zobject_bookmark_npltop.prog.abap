@@ -57,15 +57,16 @@ CONSTANTS :
   gc_alv_mode_delete TYPE c VALUE 'D'.
 
 
-CLASS : lcl_controller DEFINITION DEFERRED,  "MVC ( Controller )
-        lcl_model      DEFINITION DEFERRED,  "MVC ( Model )
+CLASS : lcl_controller    DEFINITION DEFERRED,  "MVC ( Controller )
+        lcl_model         DEFINITION DEFERRED,  "MVC ( Model )
+        lcl_tree_assist   DEFINITION DEFERRED,  "MVC ( Model )
         lcl_scr0100    DEFINITION DEFERRED,  "BUS Screen framework( 0100 )
         lcl_scr0200    DEFINITION DEFERRED,  "BUS Screen framework( 0100 )
         lcl_event      DEFINITION DEFERRED,  "Event Receiver
         lcl_module     DEFINITION DEFERRED.  "Common Module
 DATA : go_control      TYPE REF TO lcl_controller,
        go_module       TYPE REF TO lcl_module,
-       go_tree_assist1 TYPE REF TO ycl_tree_assist,
+       go_tree_assist1 TYPE REF TO lcl_tree_assist,
        go_scr0100      TYPE REF TO lcl_scr0100,
        go_scr0200      TYPE REF TO lcl_scr0200,
 
@@ -116,8 +117,8 @@ DATA : gv_ok_code1 TYPE sy-ucomm,
 *DATA : go_cont_tree1 TYPE REF TO cl_gui_container,
 *       go_cont_grid1 TYPE REF TO cl_gui_container.
 
-DATA : gt_list1 TYPE gty_t_tree ,
-       gt_tree1 TYPE gty_t_tree.
+FIELD-SYMBOLS : <gt_list2> TYPE STANDARD TABLE.
+DATA : gt_tree1 TYPE gty_t_tree.
 
 DATA : gt_list1_delete TYPE gty_t_acc_table.
 DATA : gt_style_append TYPE lvc_t_styl.
@@ -128,7 +129,6 @@ DATA : go_tree1   TYPE REF TO cl_gui_alv_tree,
        go_drag    TYPE REF TO cl_dragdrop,
        go_drop    TYPE REF TO cl_dragdrop,
 
-       go_grid1   TYPE REF TO cl_gui_alv_grid,
        go_toolbar TYPE REF TO cl_gui_toolbar,
        gt_fcat1   TYPE lvc_t_fcat,
        gt_exld1   TYPE ui_functions,
@@ -138,10 +138,19 @@ DATA : go_tree1   TYPE REF TO cl_gui_alv_tree,
        gt_sort1   TYPE lvc_t_sort.
 
 
+DATA : go_grid2 TYPE REF TO cl_gui_alv_grid,
+       gt_fcat2 TYPE lvc_t_fcat,
+       gt_exld2 TYPE ui_functions,
+       gs_layo2 TYPE lvc_s_layo,
+       gs_vari2 TYPE disvariant,
+       gs_prnt2 TYPE lvc_s_prnt,
+       gt_sort2 TYPE lvc_t_sort.
+
+
 TYPES : BEGIN OF gty_s_tree_add ,
           ismodify    TYPE c,
           node        TYPE lvc_nkey,
-          guid        type zobjectbook-guid,
+          guid        TYPE zobjectbook-guid,
           type        TYPE zobjectbook-type,
           name        TYPE zobjectbook-name,
           description TYPE zobjectbook-description,
@@ -188,18 +197,7 @@ CLASS lcl_module     DEFINITION.
     CONSTANTS mc_e TYPE c VALUE 'E' ##NO_TEXT.
     CONSTANTS mc_p TYPE c VALUE 'P' ##NO_TEXT.
 
-    TYPES:
-      BEGIN OF mty_s_toolbar ,
-        fcode       TYPE sy-ucomm,
-        icon        TYPE icon_d,
-        text        TYPE text40,
-        quickinfo   TYPE iconquick,
-        ufcode      TYPE sy-ucomm,
-        is_disabled TYPE c LENGTH 1,
-        reftoolbar  TYPE REF TO cl_gui_toolbar,
-      END OF mty_s_toolbar .
-    TYPES:
-      mty_t_toolbar TYPE STANDARD TABLE OF mty_s_toolbar .
+
 
     TYPES:
       BEGIN OF gty_s_incl_common ,
@@ -208,8 +206,39 @@ CLASS lcl_module     DEFINITION.
         vmode    TYPE char1,
       END OF gty_s_incl_common .
 
-    DATA mt_toolbar TYPE mty_t_toolbar .
-    DATA mt_contextmenu TYPE mty_t_toolbar .
+
+
+    CLASS-METHODS write_scr_field
+      IMPORTING
+        !i_fieldname  TYPE any
+        !i_fieldvalue TYPE any
+        !i_prog       TYPE sy-cprog DEFAULT sy-cprog
+        !i_dynnr      TYPE sy-dynnr DEFAULT sy-dynnr
+        !it_fields    TYPE fico_typ_tab_retval OPTIONAL .
+
+    CLASS-METHODS read_scr_field
+      IMPORTING
+        !i_fieldname   TYPE any
+        !i_prog        TYPE sy-cprog OPTIONAL
+      RETURNING
+        VALUE(r_value) TYPE char100 .
+    CLASS-METHODS disp_f4
+      IMPORTING
+        !i_retfield TYPE dfies-fieldname
+        !i_scrfield TYPE help_info-dynprofld
+        !it_data    TYPE STANDARD TABLE
+        !i_prog     TYPE sy-cprog OPTIONAL
+        !i_display  TYPE c DEFAULT ' '
+      EXPORTING
+        !et_result  TYPE fico_typ_tab_retval .
+    CLASS-METHODS ask_question
+      IMPORTING
+        !i_question  TYPE c
+      RETURNING
+        VALUE(r_ans) TYPE char01 .
+    CLASS-METHODS commit
+      IMPORTING
+        !i_wait TYPE bapita-wait DEFAULT 'X' .
 
     CLASS-METHODS get_excl_buttons
       RETURNING
@@ -229,6 +258,10 @@ CLASS lcl_module     DEFINITION.
         !i_name  TYPE c
       CHANGING
         !cs_fcat TYPE lvc_s_fcat .
+    CLASS-METHODS set_f4
+      IMPORTING
+        !io_alv  TYPE REF TO cl_gui_alv_grid
+        !it_fcat TYPE lvc_t_fcat .
 
     CLASS-METHODS get_fcat
       IMPORTING
@@ -242,6 +275,9 @@ CLASS lcl_module     DEFINITION.
       EXCEPTIONS
         no_structure
         invalid_type .
+    CLASS-METHODS get_uuidx16
+      RETURNING
+        VALUE(r_rtn) TYPE sysuuid_x16 .
 
     CLASS-METHODS get_fields
       IMPORTING
@@ -249,49 +285,9 @@ CLASS lcl_module     DEFINITION.
         !i_prefix        TYPE c OPTIONAL
       RETURNING
         VALUE(rt_fields) TYPE rstline .
-    CLASS-METHODS tree_add_toolbar
-      IMPORTING
-        !it_fcodes  TYPE mty_t_toolbar
-      CHANGING
-        !co_tree    TYPE REF TO cl_gui_alv_tree
-        !co_toolbar TYPE REF TO cl_gui_toolbar .
-    CLASS-METHODS tree_add_contextmenu
-      IMPORTING
-        !it_fcodes TYPE mty_t_toolbar
-      CHANGING
-        !co_tree   TYPE REF TO cl_gui_alv_tree .
-    METHODS handle_toolbar_selected
-        FOR EVENT function_selected OF cl_gui_toolbar
-      IMPORTING
-        !fcode .
-    METHODS handle_toolbar_dropdown
-        FOR EVENT dropdown_clicked OF cl_gui_toolbar
-      IMPORTING
-        !fcode
-        !posx
-        !posy .
-    METHODS handle_tree_node_cm_req
-        FOR EVENT node_context_menu_request OF cl_gui_alv_tree
-      IMPORTING
-        !node_key
-        !menu .
-    METHODS handle_tree_item_cm_req
-        FOR EVENT item_context_menu_request OF cl_gui_alv_tree
-      IMPORTING
-        !node_key
-        !menu .
-    METHODS handle_tree_node_cm_sel
-        FOR EVENT node_context_menu_selected OF cl_gui_alv_tree
-      IMPORTING
-        !node_key
-        !fcode
-        !sender .
-    METHODS handle_tree_item_cm_sel
-        FOR EVENT item_context_menu_selected OF cl_gui_alv_tree
-      IMPORTING
-        !fieldname
-        !node_key
-        !fcode .
+
+
+
 ENDCLASS.
 
 CLASS lcl_controller DEFINITION.
@@ -316,52 +312,13 @@ CLASS lcl_controller DEFINITION.
       END OF mty_s_treeicon,
       mty_t_treeicon TYPE STANDARD TABLE OF mty_s_treeicon.
     CLASS-METHODS :
-*    CALL METHOD go_control->fcat_0100_build(
-*      EXPORTING
-*        it_list1 = gt_list1
-*      CHANGING
-*        ct_fcat1 = gt_fcat1
-*    ).
-      tree_draw
+      scr100_grid2_toolbar
         IMPORTING
-          !is_fieldinfo TYPE mty_s_treeinfo
-          !it_fieldicon TYPE mty_t_treeicon
-        CHANGING
-          !co_tree      TYPE REF TO cl_gui_alv_tree
-          !ct_data      TYPE STANDARD TABLE
-          !ct_tree      TYPE STANDARD TABLE
-          !ct_expand    TYPE lvc_t_nkey ,
-      tree_draw_image
-        IMPORTING
-          !it_data        TYPE STANDARD TABLE
-          !it_fieldicon   TYPE mty_t_treeicon
-          !is_data        TYPE any
-          !is_fieldinfo   TYPE mty_s_treeinfo
-        CHANGING
-          !cs_node_layout TYPE lvc_s_layn
-          !c_isfolder     TYPE char01          ,
-      tree_draw_recursive
-        IMPORTING
-          !is_fieldinfo TYPE mty_s_treeinfo
-          !it_fieldicon TYPE mty_t_treeicon
-          !is_upper     TYPE any
-        EXPORTING
-          !e_err_chk    TYPE char01
-          !e_err_msg    TYPE char100
-        CHANGING
-          !co_tree      TYPE REF TO cl_gui_alv_tree
-          !ct_data      TYPE STANDARD TABLE
-          !ct_tree      TYPE STANDARD TABLE
-          !ct_expand    TYPE STANDARD TABLE ,
-*      grid_0100_display
-*        CHANGING
-*          co_tree1 TYPE REF TO cl_gui_alv_tree
-*          ct_fcat1 TYPE lvc_t_fcat
-*          ct_list1 TYPE gty_t_tree
-*          ct_tree1 TYPE gty_t_tree
-*        ,
+          p_object      TYPE REF TO cl_alv_event_toolbar_set
+          p_interactive TYPE char01
+        ,
 
-      fcat_0100_build
+      scr100_tree1_fcat_build
         IMPORTING
           it_list1 TYPE gty_t_tree
         CHANGING
@@ -444,6 +401,19 @@ CLASS lcl_event DEFINITION INHERITING FROM cl_gui_object.
         IMPORTING
           es_col_id
           es_row_no,
+
+
+
+      handle_double_click
+                  FOR EVENT double_click OF cl_gui_alv_grid
+        IMPORTING e_row
+                  e_column
+                  es_row_no ,
+
+
+      handle_node_double_click
+                  FOR EVENT node_double_click OF cl_gui_alv_tree
+        IMPORTING node_key,
 
       handle_hotspot_click
                   FOR EVENT hotspot_click OF cl_gui_alv_grid

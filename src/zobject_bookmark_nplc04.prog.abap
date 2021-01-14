@@ -9,7 +9,7 @@ CLASS lcl_event IMPLEMENTATION.
     mv_gubn = i_gubn.
   ENDMETHOD.
   METHOD handle_tree_on_drop.
-  endmethod.
+  ENDMETHOD.
 *======= Hot Spot Click Implementation
   METHOD handle_tree_on_drag.
 *    DATA: dataobj       TYPE REF TO lcl_dragdropobj,
@@ -49,7 +49,35 @@ CLASS lcl_event IMPLEMENTATION.
 *     perform handle_hotspot_click1_1   using e_row_id
 *                                             e_column_id.
     ENDCASE.
-  ENDMETHOD.                    "handle_hotspot_click1_1
+  ENDMETHOD.
+
+  METHOD handle_node_double_click.
+    DATA : lr_table TYPE REF TO data.
+    CASE mv_gubn.
+      WHEN 'SCR_TREE1'.
+        DATA(ls_tree1) = gt_tree1[ KEY node COMPONENTS node_key = node_key ].
+        CHECK ls_tree1-type = gc_t.
+        CREATE DATA lr_table TYPE STANDARD TABLE OF (ls_tree1-name).
+        ASSIGN lr_table->* to <gt_list2>.
+
+        gt_fcat2 = lcl_module=>get_fcat( it_data = <gt_list2> ).
+        CALL METHOD lcl_module=>set_f4( io_alv = go_grid2 it_fcat = gt_fcat2 ).
+        gt_exld2          =  lcl_module=>get_excl_buttons( ).
+        gs_layo2          =  lcl_module=>get_layout( it_tab  = <gt_list2> ).
+        gs_vari2-report   =  lcl_module=>get_variant( i_name = 'GO_GRID2' ).
+        BREAK-POINT.
+
+*
+*        IF gv_prg_mode <> gc_prg_mode_display.
+*          PERFORM fc_set_style_base    USING   gt_fcat2
+*                                    CHANGING  gt_style_append.
+*        ENDIF.
+
+*     perform handle_hotspot_click1_1   using e_row_id
+*                                             e_column_id.
+    ENDCASE.
+  ENDMETHOD.
+  "handle_hotspot_click1_1
 *======= Toolbar Implementation
   METHOD handle_user_command.
     CASE mv_gubn.
@@ -60,7 +88,8 @@ CLASS lcl_event IMPLEMENTATION.
 *======= Toolbar Implementation
   METHOD handle_toolbar.
     CASE mv_gubn.
-      WHEN 'SCR_0200'.
+      WHEN 'SCR_GRID2'.
+        CALL METHOD lcl_controller=>scr100_grid2_toolbar( p_object = e_object p_interactive = e_interactive ).
 *        PERFORM handle_toolbar1        USING e_object
 *                                            e_interactive.
     ENDCASE.
@@ -101,10 +130,18 @@ CLASS lcl_event IMPLEMENTATION.
   METHOD handle_button_click.
     CASE mv_gubn.
       WHEN 'SCR_0200'.
-*        PERFORM handle_button_click1        USING es_col_id
+*        CALL METHOD lcl_controller=>scr100_grid2_toolbar( p_object = p_object p_interactive = p_interactive ).
 *                                                  es_row_no.
     ENDCASE.
   ENDMETHOD.                    "handle_hotspot_click1_1
 
+  METHOD handle_double_click.
+    CASE mv_gubn.
+      WHEN 'SCR_GRID1'.
+        MESSAGE s001 WITH 'dc'.
+*        PERFORM handle_button_click1        USING es_col_id
+*                                                  es_row_no.
+    ENDCASE.
+  ENDMETHOD.                    "handle_hotspot_click1_1
 
 ENDCLASS.

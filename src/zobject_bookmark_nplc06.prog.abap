@@ -25,22 +25,27 @@ CLASS lcl_scr0200 IMPLEMENTATION.
       ENDING AT iv_xend iv_yend.
   ENDMETHOD.
   METHOD pov_name.
-    DATA(lv_bugn) = ycl_commons=>read_scr_field( i_fieldname = 'GS_TREE_ADD-TYPE' ).
-    DATA(lv_name) = ycl_commons=>read_scr_field( i_fieldname = 'GS_TREE_ADD-NAME' ).
+    DATA(lv_bugn) = lcl_module=>read_scr_field( i_fieldname = 'GS_TREE_ADD-TYPE' ).
+    DATA(lv_name) = lcl_module=>read_scr_field( i_fieldname = 'GS_TREE_ADD-NAME' ).
     CHECK lv_bugn = gc_t.
     IF lv_name IS INITIAL.
       MESSAGE s000 WITH TEXT-e02 DISPLAY LIKE gc_e.
       RETURN.
     ENDIF.
-    lv_name = |%{ lv_name }%|.
-    SELECT  tabname ,
-            ddtext
+*    lv_name = |%{ lv_name }%|.
+    SELECT  a~tabname ,
+            b~tabclass,
+            a~ddtext
       INTO TABLE @DATA(lt_f4)
-      FROM dd02t
-     WHERE ddlanguage = @sy-langu
-       AND tabname LIKE @lv_name
+      FROM dd02t AS a INNER JOIN dd02l AS b
+        ON a~tabname  = b~tabname
+       AND a~as4local = b~as4local
+       AND a~as4vers  = b~as4vers
+     WHERE a~ddlanguage = @sy-langu
+       AND a~tabname LIKE @lv_name
+       AND b~tabclass IN ( 'TRANSP' , 'VIEW' )
       .
-    CALL METHOD ycl_commons=>disp_f4(
+    CALL METHOD lcl_module=>disp_f4(
       EXPORTING
         it_data    = lt_f4
         i_retfield = 'TABNAME'
@@ -50,15 +55,15 @@ CLASS lcl_scr0200 IMPLEMENTATION.
     ).
 
     "Description을 갱신해 준다.
-    CHECK lt_rtn is not INITIAL.
+    CHECK lt_rtn IS NOT INITIAL.
     lv_name = lt_rtn[ 1 ]-fieldval.
-    SELECT SINGLE ddtext
+    SELECT SINGLE a~ddtext
       INTO @gs_tree_add-description
-      FROM dd02t
-     WHERE ddlanguage = @sy-langu
-       AND tabname = @lv_name
+      FROM dd02t AS a
+     WHERE a~ddlanguage = @sy-langu
+       AND a~tabname = @lv_name
       .
-    ycl_commons=>write_scr_field( i_fieldname = 'GS_TREE_ADD-DESCRIPTION' i_fieldvalue = gs_tree_add-description it_fields = lt_rtn ).
+    lcl_module=>write_scr_field( i_fieldname = 'GS_TREE_ADD-DESCRIPTION' i_fieldvalue = gs_tree_add-description it_fields = lt_rtn ).
 
   ENDMETHOD.
   METHOD pbo_begin.
@@ -106,7 +111,7 @@ CLASS lcl_scr0200 IMPLEMENTATION.
   METHOD handle_pai.
     DATA : ls_node_layout TYPE lvc_s_layn.
     DATA : lt_node TYPE lvc_t_nkey.
-    DATA : ls_list1 LIKE LINE OF gt_list1.
+    DATA : ls_list1 LIKE LINE OF gt_tree1.
     CASE iv_function_code.
         " For the default GUI Status, global constants can be used to evaluate the function code.
         " However, if you set your own GUI Status using method set_status( ),
@@ -127,11 +132,11 @@ CLASS lcl_scr0200 IMPLEMENTATION.
         IF gs_tree_add-guid IS INITIAL.
           "신규추가
           "DB에 저장할 내역을 생성한다.
-          ls_list1 = gt_list1[ key node COMPONENTS node_key = gs_tree_add-node ].
-*          READ TABLE gt_list1 INTO ls_list1 WITH KEY node_key = gs_tree_add-node.
+          ls_list1 = gt_tree1[ KEY node COMPONENTS node_key = gs_tree_add-node ].
+*          READ TABLE gt_tree1 INTO ls_list1 WITH KEY node_key = gs_tree_add-node.
           IF sy-subrc = 0.
             ls_list1-parent_guid = ls_list1-guid.
-            ls_list1-guid  = ycl_commons=>get_uuidx16( ).
+            ls_list1-guid  = lcl_module=>get_uuidx16( ).
             ls_list1-usrid = sy-uname.
             ls_list1-type = gs_tree_add-type.
             ls_list1-name = gs_tree_add-name.
@@ -150,10 +155,10 @@ CLASS lcl_scr0200 IMPLEMENTATION.
 
 
           "DB에 반영한다.
-          CALL METHOD lcl_model=>save_tree( gt_list1 ).
+          CALL METHOD lcl_model=>save_tree( gt_tree1 ).
         ELSE.
           "수정..
-          ls_list1 = VALUE #( gt_list1[ KEY id COMPONENTS guid = gs_tree_add-guid  ] DEFAULT ls_list1  ).
+          ls_list1 = VALUE #( gt_tree1[ KEY id COMPONENTS guid = gs_tree_add-guid  ] DEFAULT ls_list1  ).
           CHECK sy-subrc = 0.
           ls_list1 = CORRESPONDING #( BASE ( ls_list1 )  gs_tree_add ).
           CALL METHOD go_tree1->change_node
@@ -164,11 +169,11 @@ CLASS lcl_scr0200 IMPLEMENTATION.
               i_node_text    = CONV #( gs_tree_add-name )
             EXCEPTIONS
               node_not_found = 1.
-          if sy-subrc = 0.
+          IF sy-subrc = 0.
             CALL METHOD go_tree1->frontend_update( ).
             "DB에 반영한다.
             CALL METHOD lcl_model=>update_tree( ls_list1 ).
-          endif.
+          ENDIF.
         ENDIF.
         leave( ).
       WHEN OTHERS.

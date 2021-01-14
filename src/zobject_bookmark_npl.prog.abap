@@ -10,6 +10,7 @@
 REPORT zobject_bookmark_npl MESSAGE-ID ymes01.
 
 INCLUDE zobject_bookmark_npltop.
+INCLUDE zobject_bookmark_nplc00.  "lcl_tree_assist ( Moonbye Tree Assistant V0.1 )
 INCLUDE zobject_bookmark_nplc01.  "lcl_module ( 공통으로 사용할 수 있는 각종 method들이 들어있다. )
 INCLUDE zobject_bookmark_nplc02.  "lcl_controller  ( MVC Controller )
 INCLUDE zobject_bookmark_nplc03.  "lcl_model ( MVC Model )

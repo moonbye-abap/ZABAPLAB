@@ -3,191 +3,10 @@
 *&---------------------------------------------------------------------*
 
 CLASS lcl_module     IMPLEMENTATION.
-  METHOD tree_add_contextmenu.
-    CHECK it_fcodes IS NOT INITIAL.
-
-    DATA : lo_event TYPE REF TO lcl_module.
-    CREATE OBJECT lo_event.
-
-    SET HANDLER lo_event->handle_tree_node_cm_req        "Context Menu Request
-            FOR co_tree.
-
-    SET HANDLER lo_event->handle_tree_item_cm_req        "Context Menu Request
-            FOR co_tree.
-
-    SET HANDLER lo_event->handle_tree_node_cm_sel        "Context Menu Request
-            FOR co_tree.
-
-    SET HANDLER lo_event->handle_tree_item_cm_sel        "Context Menu Request
-            FOR co_tree.
-
-    lo_event->mt_contextmenu = it_fcodes.
-
-*    mo_event01 ?= lo_event.
-    CALL METHOD co_tree->get_registered_events
-      IMPORTING
-        events = DATA(lt_event).
-
-    READ TABLE lt_event TRANSPORTING NO FIELDS WITH KEY eventid = cl_gui_column_tree=>eventid_node_context_menu_req.
-    IF sy-subrc <> 0.
-      APPEND VALUE #( eventid = cl_gui_column_tree=>eventid_node_context_menu_req ) TO lt_event.
-    ENDIF.
-
-    READ TABLE lt_event TRANSPORTING NO FIELDS WITH KEY eventid = cl_gui_column_tree=>eventid_item_context_menu_req.
-    IF sy-subrc <> 0.
-      APPEND VALUE #( eventid = cl_gui_column_tree=>eventid_item_context_menu_req ) TO lt_event.
-    ENDIF.
 
 
 
-    "go_tree1의 추가된 event set정보를 등록해 준다.
-    CALL METHOD co_tree->set_registered_events
-      EXPORTING
-        events                    = lt_event
-      EXCEPTIONS
-        cntl_error                = 1
-        cntl_system_error         = 2
-        illegal_event_combination = 3.
-    IF sy-subrc <> 0.
-      "go_tree1의 추가된 event set정보를 등록해 준다.
-      DELETE lt_event WHERE eventid = cl_gui_column_tree=>eventid_item_context_menu_req.
-      CALL METHOD co_tree->set_registered_events
-        EXPORTING
-          events                    = lt_event
-        EXCEPTIONS
-          cntl_error                = 1
-          cntl_system_error         = 2
-          illegal_event_combination = 3.
-    ENDIF.
-  ENDMETHOD.
-  METHOD tree_add_toolbar.
 
-    CHECK co_tree IS NOT INITIAL.
-    DATA : lo_event TYPE REF TO lcl_module.
-    CREATE OBJECT lo_event.
-
-    DATA : lv_butn_type TYPE tb_btype,
-           ls_toolbars  LIKE LINE OF it_fcodes
-           .
-    IF co_toolbar IS INITIAL.
-      CALL METHOD co_tree->get_toolbar_object
-        IMPORTING
-          er_toolbar = co_toolbar.
-    ENDIF.
-
-    LOOP AT it_fcodes ASSIGNING FIELD-SYMBOL(<ls_fcodes>) WHERE ufcode IS INITIAL.
-      CASE <ls_fcodes>-fcode.
-        WHEN mc_hyphen.
-          lv_butn_type = cntb_btype_sep.
-        WHEN OTHERS.
-          READ TABLE it_fcodes TRANSPORTING NO FIELDS WITH KEY ufcode = <ls_fcodes>-fcode.
-          IF sy-subrc = 0.
-            lv_butn_type = cntb_btype_menu.
-          ELSE.
-            lv_butn_type = cntb_btype_button.
-          ENDIF.
-      ENDCASE.
-      CALL METHOD co_toolbar->add_button
-        EXPORTING
-          fcode       = <ls_fcodes>-fcode
-          icon        = <ls_fcodes>-icon
-          "Button Type은 Domain값을 통해확인할수 있다.[ 3 : 구분선임]
-          butn_type   = lv_butn_type
-          text        = <ls_fcodes>-text
-          quickinfo   = <ls_fcodes>-quickinfo
-          is_disabled = <ls_fcodes>-is_disabled
-          "Tree를 그려준다.
-        .
-    ENDLOOP.
-
-    "Event
-    DATA(lt_toolbars) = it_fcodes.
-    DELETE lt_toolbars WHERE fcode = mc_hyphen.
-    GET REFERENCE OF co_toolbar INTO DATA(lv_ref).
-    ls_toolbars-reftoolbar = lv_ref->*.
-    MODIFY lt_toolbars FROM ls_toolbars TRANSPORTING reftoolbar WHERE fcode > ' '.
-
-    lo_event->mt_toolbar = lt_toolbars.
-
-    SET HANDLER lo_event->handle_toolbar_dropdown FOR co_toolbar.
-    SET HANDLER lo_event->handle_toolbar_selected FOR co_toolbar.
-  ENDMETHOD.
-  METHOD handle_toolbar_dropdown.
-    DATA : lo_ctmenu TYPE REF TO cl_ctmenu.
-    CREATE OBJECT lo_ctmenu.
-
-    READ TABLE mt_toolbar INTO DATA(ls_first) WITH KEY ufcode = fcode.
-    CHECK sy-subrc = 0.
-    LOOP AT mt_toolbar INTO DATA(ls_fcode) FROM sy-tabix.
-      IF ls_fcode-ufcode <> fcode.
-        EXIT.
-      ENDIF.
-      CALL METHOD lo_ctmenu->add_function
-        EXPORTING
-          fcode    = ls_fcode-fcode
-          text     = ls_fcode-text
-          disabled = ls_fcode-is_disabled
-          icon     = ls_fcode-icon.
-
-    ENDLOOP.
-
-    CALL METHOD ls_first-reftoolbar->track_context_menu
-      EXPORTING
-        context_menu = lo_ctmenu
-        posx         = posx
-        posy         = posy.
-
-  ENDMETHOD.
-  METHOD handle_toolbar_selected.
-
-    CALL FUNCTION 'SAPGUI_SET_FUNCTIONCODE'
-      EXPORTING
-        functioncode           = fcode
-      EXCEPTIONS
-        function_not_supported = 1.
-  ENDMETHOD.
-  METHOD handle_tree_item_cm_req.
-* In this case the standard menu is cleared.
-    CALL METHOD menu->clear.
-* The next line defines one line of the context menu.
-    LOOP AT mt_contextmenu INTO DATA(ls_contextmenu).
-      CALL METHOD menu->add_function
-        EXPORTING
-          fcode    = ls_contextmenu-fcode
-          text     = ls_contextmenu-text
-          icon     = ls_contextmenu-icon
-          disabled = ls_contextmenu-is_disabled.
-    ENDLOOP.
-  ENDMETHOD.
-  METHOD handle_tree_item_cm_sel.
-    CALL FUNCTION 'SAPGUI_SET_FUNCTIONCODE'
-      EXPORTING
-        functioncode           = fcode
-      EXCEPTIONS
-        function_not_supported = 1.
-  ENDMETHOD.
-  METHOD handle_tree_node_cm_req.
-
-* In this case the standard menu is cleared.
-    CALL METHOD menu->clear.
-* The next line defines one line of the context menu.
-    LOOP AT mt_contextmenu INTO DATA(ls_contextmenu).
-      CALL METHOD menu->add_function
-        EXPORTING
-          fcode    = ls_contextmenu-fcode
-          text     = ls_contextmenu-text
-          icon     = ls_contextmenu-icon
-          disabled = ls_contextmenu-is_disabled.
-    ENDLOOP.
-
-  ENDMETHOD.
-  METHOD handle_tree_node_cm_sel.
-    CALL FUNCTION 'SAPGUI_SET_FUNCTIONCODE'
-      EXPORTING
-        functioncode           = fcode
-      EXCEPTIONS
-        function_not_supported = 1.
-  ENDMETHOD.
   METHOD get_excl_buttons.
 *  APPEND cl_gui_alv_grid=>mc_fc_auf                     TO rt_excl.                 "Drilldown Totals Level
 *  APPEND cl_gui_alv_grid=>mc_fc_average                 TO rt_excl.                 "Calculate Average
@@ -268,7 +87,152 @@ CLASS lcl_module     IMPLEMENTATION.
 *  APPEND cl_gui_alv_grid=>mc_fc_views                   TO rt_excl.                 "View Change
     APPEND cl_gui_alv_grid=>mc_fc_word_processor          TO rt_excl.                 "Word Processing
   ENDMETHOD.
+  method COMMIT.
 
+    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+     EXPORTING
+       WAIT          = i_wait
+*     IMPORTING
+*       RETURN        =
+              .
+
+  endmethod.
+  method ASK_QUESTION.
+      CALL FUNCTION 'POPUP_TO_CONFIRM'
+        EXPORTING
+          text_question               = i_question
+       IMPORTING
+         ANSWER                      = r_ans
+       EXCEPTIONS
+         TEXT_NOT_FOUND              = 1
+         OTHERS                      = 2
+                .
+
+  endmethod.
+  METHOD disp_f4.
+
+    DATA : lt_fields    TYPE STANDARD TABLE OF dynpread,
+           lt_f4_return TYPE STANDARD TABLE OF ddshretval,
+           lv_prog      TYPE sy-cprog,
+           lv_prog_old  TYPE sy-cprog,
+           ls_fields    LIKE LINE OF lt_fields.
+    FIELD-SYMBOLS : <ls_data>  TYPE any, <lv_field> TYPE any.
+
+    CHECK it_data IS NOT INITIAL.
+
+    lv_prog_old = sy-cprog.
+    IF i_prog IS NOT INITIAL.
+      sy-cprog = i_prog.
+    ENDIF.
+    IF lines( it_data ) > 1.
+      CALL FUNCTION 'F4IF_INT_TABLE_VALUE_REQUEST'
+        EXPORTING
+          retfield        = i_retfield                     "Value_tab 의 Internal Table에서 사용자가 선택후 되돌려줄 Field Name.
+          dynpprog        = sy-cprog                       "이 부분을 변수로 처리하게 되면 [F4]화면이 올라온 후 [focus]가 이동하지 않는 현상을 접하게 된다.
+          dynpnr          = sy-dynnr
+          display         = i_display                      "화면을 비활성창으로 열것인가?
+          dynprofield     = i_scrfield            "RETFIELD 에 의해 선택된 값이 화면상에 들어올 개체이름. -Low/-High가 들어가면 데이타가 안올라 올수 있다.
+          value_org       = 'S'                      "Return종류 C [Cell], S[Structure]
+        TABLES
+          value_tab       = it_data                 "화면에 표시될 itab (내 마음대로 정의한 itab사용가능)
+          return_tab      = lt_f4_return    "POP후 선택된 값이 들어올 테이블. (이것을 생략하면, 비동기로 처리되어 원하는 않게 동작할 수 있다.)
+        EXCEPTIONS
+          parameter_error = 1
+          no_values_found = 2
+          OTHERS          = 3.
+      sy-cprog = lv_prog_old.
+      et_result = lt_f4_return.
+    ELSE.
+      READ TABLE it_data ASSIGNING <ls_data> INDEX 1.
+      ASSIGN COMPONENT i_retfield OF STRUCTURE <ls_data> TO <lv_field>.
+      CHECK sy-subrc = 0.
+      ls_fields-fieldname   = i_scrfield.
+      ls_fields-fieldvalue  = <lv_field>.
+      APPEND ls_fields TO lt_fields.
+      CALL FUNCTION 'DYNP_VALUES_UPDATE'
+        EXPORTING
+          dyname               = lv_prog
+          dynumb               = sy-dynnr
+        TABLES
+          dynpfields           = lt_fields
+        EXCEPTIONS
+          invalid_abapworkarea = 1
+          invalid_dynprofield  = 2
+          invalid_dynproname   = 3
+          invalid_dynpronummer = 4
+          invalid_request      = 5
+          no_fielddescription  = 6
+          undefind_error       = 7
+          OTHERS               = 8.
+      APPEND VALUE #( fieldval = <lv_field> retfield = i_scrfield ) TO et_result.
+    ENDIF.
+
+  ENDMETHOD.
+  METHOD write_scr_field.
+
+    DATA : lt_data TYPE STANDARD TABLE OF dynpread.
+    lt_data = CORRESPONDING #( it_fields MAPPING fieldname = retfield fieldvalue = fieldval ).
+    lt_data = VALUE #(  BASE lt_data
+                    ( fieldname = i_fieldname fieldvalue = i_fieldvalue  )
+                  ).
+    CALL FUNCTION 'DYNP_VALUES_UPDATE'
+      EXPORTING
+        dyname     = i_prog
+        dynumb     = i_dynnr
+      TABLES
+        dynpfields = lt_data
+*     EXCEPTIONS
+*       INVALID_ABAPWORKAREA       = 1
+*       INVALID_DYNPROFIELD        = 2
+*       INVALID_DYNPRONAME         = 3
+*       INVALID_DYNPRONUMMER       = 4
+*       INVALID_REQUEST            = 5
+*       NO_FIELDDESCRIPTION        = 6
+*       UNDEFIND_ERROR             = 7
+*       OTHERS     = 8
+      .
+    IF sy-subrc <> 0.
+* Implement suitable error handling here
+    ENDIF.
+
+  ENDMETHOD.
+
+  method READ_SCR_FIELD.
+    DATA : lt_dyread TYPE STANDARD TABLE OF dynpread,
+           lv_prog   type sy-cprog,
+           ls_dyread LIKE LINE OF lt_dyread.
+
+    if lv_prog is INITIAL.
+      lv_prog = sy-cprog.
+    else.
+      lv_prog = i_prog.
+    endif.
+    CALL FUNCTION 'DYNP_VALUES_READ'
+      EXPORTING
+        dyname             = lv_prog
+        dynumb             = sy-dynnr
+        translate_to_upper = 'X'
+        request            = 'A'
+      TABLES
+        dynpfields         = lt_dyread
+     EXCEPTIONS
+         INVALID_ABAPWORKAREA
+         INVALID_DYNPROFIELD
+         INVALID_DYNPRONAME
+         INVALID_DYNPRONUMMER
+         INVALID_REQUEST
+         NO_FIELDDESCRIPTION
+         INVALID_PARAMETER
+         UNDEFIND_ERROR
+         DOUBLE_CONVERSION
+         STEPL_NOT_FOUND
+         .
+    SORT lt_dyread BY fieldname.
+    READ TABLE lt_dyread INTO ls_dyread WITH KEY fieldname = i_fieldname BINARY SEARCH.
+    IF sy-subrc = 0.
+      r_value =  ls_dyread-fieldvalue.
+    ENDIF.
+  endmethod.
   METHOD get_layout.
 
     CONSTANTS : lc_col  TYPE char5 VALUE '*COL*',
@@ -390,6 +354,25 @@ CLASS lcl_module     IMPLEMENTATION.
   METHOD set_fcat_name.
     cs_fcat-scrtext_s = cs_fcat-scrtext_m = cs_fcat-scrtext_l = cs_fcat-tooltip = cs_fcat-coltext = i_name.
   ENDMETHOD.
+  method GET_UUIDX16.
+    r_rtn = cl_system_uuid=>CREATE_UUID_X16_STATIC( ).
+  endmethod.
+    method SET_F4.
+
+    data : ls_fcat LIKE LINE OF it_fcat.
+    data : lt_f4_list type LVC_T_F4,
+           ls_f4      type lvc_s_f4.
+    ls_f4-register = mc_x.
+    loop at it_fcat into ls_fcat where f4availabl = mc_x.
+      ls_f4-fieldname  = ls_fcat-fieldname.
+      insert ls_f4 into TABLE lt_f4_list.
+    ENDLOOP.
+
+    CALL METHOD io_alv->REGISTER_F4_FOR_FIELDS
+      EXPORTING
+        IT_F4  = lt_f4_list
+      .
+  endmethod.
   METHOD get_fcat.
     DATA:
       ls_fcat        TYPE lvc_s_fcat,

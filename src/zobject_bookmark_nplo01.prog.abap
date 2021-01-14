@@ -30,9 +30,9 @@ MODULE init_0100_grid_value OUTPUT.
   IF gv_first IS INITIAL.
 *.............> Define Field category attributes
 **               -----------------------
-    CALL METHOD go_control->fcat_0100_build(
+    CALL METHOD go_control->scr100_tree1_fcat_build(
       EXPORTING
-        it_list1 = gt_list1
+        it_list1 = gt_tree1
       CHANGING
         ct_fcat1 = gt_fcat1
     ).
@@ -40,7 +40,7 @@ MODULE init_0100_grid_value OUTPUT.
 *.............> Define ALV Standard button attributes
 *               -----------------------
     gt_exld1          =  lcl_module=>get_excl_buttons( ).
-    gs_layo1          =  lcl_module=>get_layout( it_tab  = gt_list1 ).
+    gs_layo1          =  lcl_module=>get_layout( it_tab  = gt_tree1 ).
     gs_vari1-report   =  lcl_module=>get_variant( i_name = 'go_grid1' ).
 *
 *    IF gv_prg_mode <> gc_prg_mode_display.
