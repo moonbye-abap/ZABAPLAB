@@ -273,6 +273,16 @@
     </STA>
     <FUN>
      <RSMPE_FUNT>
+      <CODE>ADMIN</CODE>
+      <TEXTNO>001</TEXTNO>
+      <TEXT_TYPE>S</TEXT_TYPE>
+      <TEXT_NAME>ICON_SYSTEM_ADMINISTRATOR</TEXT_NAME>
+      <ICON_ID>@KQ@</ICON_ID>
+      <FUN_TEXT>관리자</FUN_TEXT>
+      <ICON_TEXT>관리자</ICON_TEXT>
+      <INFO_TEXT>관리자</INFO_TEXT>
+     </RSMPE_FUNT>
+     <RSMPE_FUNT>
       <CODE>BACK</CODE>
       <TEXTNO>001</TEXTNO>
       <TYPE>E</TYPE>
@@ -315,6 +325,12 @@
     </FUN>
     <BUT>
      <RSMPE_BUT>
+      <PFK_CODE>000001</PFK_CODE>
+      <CODE>0001</CODE>
+      <NO>01</NO>
+      <PFNO>13</PFNO>
+     </RSMPE_BUT>
+     <RSMPE_BUT>
       <PFK_CODE>000002</PFK_CODE>
       <CODE>0001</CODE>
       <NO>01</NO>
@@ -344,6 +360,12 @@
       <CODE>000001</CODE>
       <PFNO>12</PFNO>
       <FUNCODE>CANCEL</FUNCODE>
+      <FUNNO>001</FUNNO>
+     </RSMPE_PFK>
+     <RSMPE_PFK>
+      <CODE>000001</CODE>
+      <PFNO>13</PFNO>
+      <FUNCODE>ADMIN</FUNCODE>
       <FUNNO>001</FUNNO>
      </RSMPE_PFK>
      <RSMPE_PFK>
@@ -378,6 +400,10 @@
      </RSMPE_PFK>
     </PFK>
     <SET>
+     <RSMPE_STAF>
+      <STATUS>PF_0100</STATUS>
+      <FUNCTION>ADMIN</FUNCTION>
+     </RSMPE_STAF>
      <RSMPE_STAF>
       <STATUS>PF_0100</STATUS>
       <FUNCTION>BACK</FUNCTION>

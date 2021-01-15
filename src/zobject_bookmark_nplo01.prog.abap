@@ -30,7 +30,7 @@ MODULE init_0100_grid_value OUTPUT.
   IF gv_first IS INITIAL.
 *.............> Define Field category attributes
 **               -----------------------
-    CALL METHOD go_control->scr100_tree1_fcat_build(
+    CALL METHOD lcl_scr0100=>tree1_fcat_build(
       EXPORTING
         it_list1 = gt_tree1
       CHANGING

@@ -57,16 +57,14 @@ CONSTANTS :
   gc_alv_mode_delete TYPE c VALUE 'D'.
 
 
-CLASS : lcl_controller    DEFINITION DEFERRED,  "MVC ( Controller )
+CLASS : lcl_scr2000       DEFINITION DEFERRED,  "Screen 2000 controller
         lcl_model         DEFINITION DEFERRED,  "MVC ( Model )
         lcl_tree_assist   DEFINITION DEFERRED,  "MVC ( Model )
         lcl_scr0100    DEFINITION DEFERRED,  "BUS Screen framework( 0100 )
         lcl_scr0200    DEFINITION DEFERRED,  "BUS Screen framework( 0100 )
         lcl_event      DEFINITION DEFERRED,  "Event Receiver
         lcl_module     DEFINITION DEFERRED.  "Common Module
-DATA : go_control      TYPE REF TO lcl_controller,
-       go_module       TYPE REF TO lcl_module,
-       go_tree_assist1 TYPE REF TO lcl_tree_assist,
+DATA : go_tree_assist1 TYPE REF TO lcl_tree_assist,
        go_scr0100      TYPE REF TO lcl_scr0100,
        go_scr0200      TYPE REF TO lcl_scr0200,
 
@@ -159,6 +157,24 @@ TYPES : BEGIN OF gty_s_tree_add ,
 DATA : gs_tree_add TYPE gty_s_tree_add .
 
 
+TYPES : BEGIN OF gty_s_list3.
+          INCLUDE TYPE zobjectbook.
+          INCLUDE TYPE ycl_commons=>gty_s_incl_common.
+ TYPES : usrid_nm type char30,
+        END OF gty_s_list3,
+        gty_t_list3 TYPE STANDARD TABLE OF gty_s_list3.
+
+DATA : go_dock3  TYPE REF TO cl_gui_docking_container.
+DATA : go_grid3 TYPE REF TO cl_gui_alv_grid,
+       gt_fcat3 TYPE lvc_t_fcat,
+       gt_exld3 TYPE ui_functions,
+       gs_layo3 TYPE lvc_s_layo,
+       gs_vari3 TYPE disvariant,
+       gs_prnt3 TYPE lvc_s_prnt,
+       gt_sort3 TYPE lvc_t_sort.
+DATA : gt_list3 TYPE gty_t_list3.
+SELECTION-SCREEN BEGIN OF SCREEN 2000.
+SELECTION-SCREEN END OF SCREEN 2000.
 
 *&---------------------------------------------------------------------*
 * Class Definition
@@ -207,6 +223,11 @@ CLASS lcl_module     DEFINITION.
       END OF gty_s_incl_common .
 
 
+    CLASS-METHODS set_position
+      IMPORTING
+        !i_row       TYPE sy-tabix
+        !i_fieldname TYPE fieldname
+        !io_alv      TYPE REF TO cl_gui_alv_grid .
 
     CLASS-METHODS write_scr_field
       IMPORTING
@@ -215,13 +236,25 @@ CLASS lcl_module     DEFINITION.
         !i_prog       TYPE sy-cprog DEFAULT sy-cprog
         !i_dynnr      TYPE sy-dynnr DEFAULT sy-dynnr
         !it_fields    TYPE fico_typ_tab_retval OPTIONAL .
-
+    CLASS-METHODS refresh_alv
+      IMPORTING
+        !io_alv   TYPE REF TO cl_gui_alv_grid
+        !i_normal TYPE char01 OPTIONAL .
     CLASS-METHODS read_scr_field
       IMPORTING
         !i_fieldname   TYPE any
         !i_prog        TYPE sy-cprog OPTIONAL
       RETURNING
         VALUE(r_value) TYPE char100 .
+    CLASS-METHODS disp_f4_alv
+      IMPORTING
+        !it_data    TYPE STANDARD TABLE
+        !i_retfield TYPE dfies-fieldname
+        !i_scrfield TYPE lvc_fname
+        !i_display  TYPE c DEFAULT ' '
+        !is_row_no  TYPE lvc_s_roid
+        !io_data    TYPE REF TO cl_alv_event_data .
+
     CLASS-METHODS disp_f4
       IMPORTING
         !i_retfield TYPE dfies-fieldname
@@ -290,41 +323,49 @@ CLASS lcl_module     DEFINITION.
 
 ENDCLASS.
 
-CLASS lcl_controller DEFINITION.
+CLASS lcl_scr2000 DEFINITION.
   PUBLIC SECTION.
-    CONSTANTS : mc_e TYPE c VALUE 'E',
-                mc_x TYPE c VALUE 'X'.
-    TYPES:
-      BEGIN OF mty_s_treeinfo,
-        ficon TYPE fieldname,
-        fmkey TYPE fieldname,
-        fukey TYPE fieldname,
-        fname TYPE fieldname,
-        fsort TYPE fieldname,
-        fnode TYPE fieldname,
-      END OF mty_s_treeinfo .
-    TYPES:
-      BEGIN OF mty_s_treeicon,
-        gubn      TYPE fieldname,
-        n_image   TYPE icon_d,
-        exp_image TYPE icon_d,
-
-      END OF mty_s_treeicon,
-      mty_t_treeicon TYPE STANDARD TABLE OF mty_s_treeicon.
     CLASS-METHODS :
-      scr100_grid2_toolbar
+
+      pbo,
+      grid3_event_data_changed
+        IMPORTING
+          er_data_changed TYPE REF TO	cl_alv_changed_data_protocol
+          e_onf4          TYPE  char01
+          e_onf4_before   TYPE  char01
+          e_onf4_after    TYPE  char01
+          e_ucomm         TYPE  sy-ucomm,
+
+      grid3_event_onf4
+        IMPORTING
+          e_fieldname   TYPE  lvc_fname
+          e_fieldvalue  TYPE  lvc_value
+          es_row_no     TYPE  lvc_s_roid
+          er_event_data TYPE REF TO	cl_alv_event_data
+          et_bad_cells  TYPE  lvc_t_modi
+          e_display     TYPE  char01,
+
+      grid3_event_toolbar
         IMPORTING
           p_object      TYPE REF TO cl_alv_event_toolbar_set
           p_interactive TYPE char01
         ,
-
-      scr100_tree1_fcat_build
+      grid3_event_user_command
         IMPORTING
-          it_list1 TYPE gty_t_tree
+          i_ucomm TYPE sy-ucomm
+        ,
+      pai.
+  PRIVATE SECTION.
+    CLASS-METHODS :
+      grid3_fcat_build
+        IMPORTING
+          it_list TYPE gty_t_list3
         CHANGING
-          ct_fcat1 TYPE lvc_t_fcat.
-
-
+          ct_fcat TYPE lvc_t_fcat,
+      grid3_display,
+      grid3_define_value,
+      grid3_define_event_process,
+      grid3_create_container.
 
 ENDCLASS.
 
@@ -351,12 +392,12 @@ ENDCLASS.
 
 CLASS lcl_event DEFINITION INHERITING FROM cl_gui_object.
   PUBLIC SECTION.
-    DATA : mv_gubn TYPE char10.
+    DATA : mv_gubn TYPE char20.
     METHODS :
 
       constructor
         IMPORTING
-          i_gubn TYPE char10,
+          i_gubn TYPE char20,
       "ALV Hot Spot Click Event
       handle_toolbar
           FOR EVENT toolbar OF cl_gui_alv_grid
@@ -418,17 +459,9 @@ CLASS lcl_event DEFINITION INHERITING FROM cl_gui_object.
       handle_hotspot_click
                   FOR EVENT hotspot_click OF cl_gui_alv_grid
         IMPORTING e_row_id
-                  e_column_id,
+                  e_column_id.
 
-      handle_tree_on_drag
-      FOR EVENT on_drag_multiple
-                  OF cl_gui_alv_tree
-        IMPORTING sender node_key_table fieldname drag_drop_object,
 
-      handle_tree_on_drop
-      FOR EVENT on_drop
-                  OF cl_gui_alv_tree
-        IMPORTING sender node_key drag_drop_object.
 
   PRIVATE SECTION.
 
@@ -449,6 +482,25 @@ CLASS lcl_scr0100 DEFINITION
       IMPORTING iv_function_code.
 
     METHODS pbo_begin REDEFINITION.
+
+    CLASS-METHODS :
+      grid2_node_double_click
+        IMPORTING
+          node_key TYPE lvc_nkey
+
+        ,
+
+      grid2_event_toolbar
+        IMPORTING
+          p_object      TYPE REF TO cl_alv_event_toolbar_set
+          p_interactive TYPE char01
+        ,
+
+      tree1_fcat_build
+        IMPORTING
+          it_list1 TYPE gty_t_tree
+        CHANGING
+          ct_fcat1 TYPE lvc_t_fcat.
 
   PROTECTED SECTION.
     "DynPro 명령 ( Call Screen xxxx)

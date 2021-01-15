@@ -5,6 +5,184 @@
 
 
 CLASS lcl_scr0100 IMPLEMENTATION.
+  METHOD grid2_node_double_click.
+    DATA : lr_table TYPE REF TO data,
+           ls_fcat  LIKE LINE OF gt_fcat2.
+    DATA(ls_tree1) = gt_tree1[ KEY node COMPONENTS node_key = node_key ].
+    CHECK ls_tree1-type = gc_t.
+
+    gt_fcat2 = lcl_module=>get_fcat( iv_ddic_object = ls_tree1-name ).
+
+    CLEAR ls_fcat.
+    ls_fcat-fieldname = 'VCELLTAB'.
+    ls_fcat-ref_table = 'FUGR_ANALYSIS_VIEWER_LINE'.
+    ls_fcat-ref_field = 'STYLES'.
+    APPEND ls_fcat TO gt_fcat2.
+    ls_fcat-fieldname = 'VCOLOR'.
+    ls_fcat-ref_table = 'FUGR_ANALYSIS_VIEWER_LINE'.
+    ls_fcat-ref_field = 'COLORS'.
+    APPEND ls_fcat TO gt_fcat2.
+    CALL METHOD lcl_module=>set_f4( io_alv = go_grid2 it_fcat = gt_fcat2 ).
+
+    CALL METHOD cl_alv_table_create=>create_dynamic_table
+      EXPORTING
+        it_fieldcatalog = gt_fcat2
+      IMPORTING
+        ep_table        = lr_table.
+    ASSIGN lr_table->* TO <gt_list2>.
+    DELETE gt_fcat2 WHERE fieldname = 'VCELLTAB'.
+    DELETE gt_fcat2 WHERE fieldname = 'VCOLOR'.
+    gt_exld2          =  lcl_module=>get_excl_buttons( ).
+    gs_layo2          =  lcl_module=>get_layout( it_tab  = <gt_list2> ).
+    gs_vari2-report   =  lcl_module=>get_variant( i_name = 'GO_GRID2' ).
+
+    SELECT *
+      INTO CORRESPONDING FIELDS OF TABLE <gt_list2>
+     FROM (ls_tree1-name).
+
+    gs_layo2-col_opt   = space.
+    CALL METHOD go_grid2->set_table_for_first_display
+      EXPORTING
+        is_layout            = gs_layo2
+        is_variant           = gs_vari2
+        it_toolbar_excluding = gt_exld2
+        is_print             = gs_prnt2
+        i_save               = gc_a
+        i_default            = space
+      CHANGING
+        it_sort              = gt_sort2[]
+        it_fieldcatalog      = gt_fcat2[]
+        it_outtab            = <gt_list2>.
+
+*
+*        IF gv_prg_mode <> gc_prg_mode_display.
+*          PERFORM fc_set_style_base    USING   gt_fcat2
+*                                    CHANGING  gt_style_append.
+*        ENDIF.
+
+*     perform handle_hotspot_click1_1   using e_row_id
+*                                             e_column_id.
+  ENDMETHOD.
+  METHOD grid2_event_toolbar.
+
+    DATA : ls_toolbar TYPE stb_button.
+    ls_toolbar-butn_type = 3.  "Seperate line
+    APPEND ls_toolbar TO p_object->mt_toolbar.
+    CLEAR ls_toolbar. "Important syntax
+    ls_toolbar-function = 'INS_LINE'.
+    ls_toolbar-icon      = icon_insert_row.
+    ls_toolbar-text         = 'INSERT'.
+    APPEND ls_toolbar TO p_object->mt_toolbar.
+
+    CLEAR ls_toolbar.
+    ls_toolbar-function = 'DEL_LINE'.
+    ls_toolbar-text         = 'DELETE'.
+    APPEND ls_toolbar TO p_object->mt_toolbar.
+
+    CLEAR ls_toolbar.
+    ls_toolbar-function = 'SAVE'.
+    ls_toolbar-text         = 'SAVE'.
+    APPEND ls_toolbar TO p_object->mt_toolbar.
+
+    CLEAR ls_toolbar.
+    ls_toolbar-butn_type = 1. "Multi line
+    ls_toolbar-function = 'INS_MULTI'.
+    ls_toolbar-text         = 'MULTI BTN'.
+    APPEND ls_toolbar TO p_object->mt_toolbar.
+
+  ENDMETHOD.
+  METHOD tree1_fcat_build.
+    "-----------------------------------------
+    " Screen(100)의 Field Catalog를 생성한다.
+    "-----------------------------------------
+    DATA : ls_fcat TYPE lvc_s_fcat.
+
+    FREE : ct_fcat1.
+
+    ct_fcat1 = lcl_module=>get_fcat( it_data = it_list1 ).
+*######################################################################*
+*   FIELD Attribute Setting
+*######################################################################*
+    LOOP AT ct_fcat1 INTO ls_fcat.
+      CASE ls_fcat-fieldname.
+        WHEN 'ZORDER'.
+          ls_fcat-col_pos  = 5.
+          ls_fcat-outputlen = 8.
+          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = '순번' CHANGING cs_fcat = ls_fcat ).
+          ls_fcat-key      = gc_x.
+
+        WHEN 'DESCRIPTION'.
+          ls_fcat-col_pos  = 10.
+          ls_fcat-outputlen = 50.
+          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'Description' CHANGING cs_fcat = ls_fcat ).
+          ls_fcat-key      = gc_x.
+
+*        WHEN 'WERKS'.
+*          ls_fcat-col_pos  = 20.
+*          ls_fcat-key      = gc_x.
+*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'PLANT' CHANGING cs_fcat = ls_fcat ).
+*
+*        WHEN 'FIELD1'.
+*          ls_fcat-col_pos  = 30.
+*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'INPUT1' CHANGING cs_fcat = ls_fcat ).
+*
+*        WHEN 'FIELD2'.
+*          ls_fcat-col_pos  = 40.
+*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'INPUT2' CHANGING cs_fcat = ls_fcat ).
+*
+*        WHEN 'SPRAS'.
+*          ls_fcat-col_pos  = 45.
+*          ls_fcat-outputlen = 5.
+*          ls_fcat-f4availabl  = gc_x.
+*          ls_fcat-convexit    = 'ISOLA'.
+*          CLEAR : ls_fcat-domname, ls_fcat-ref_table, ls_fcat-ref_field.
+*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'LANG' CHANGING cs_fcat = ls_fcat ).
+*
+*        WHEN 'SPRAS_NM'.
+*          ls_fcat-col_pos  = 46.
+*          ls_fcat-outputlen = 10.
+**        ls_fcat-edit =
+*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'LANG NAME' CHANGING cs_fcat = ls_fcat ).
+*
+*        WHEN 'DATA'.
+*          ls_fcat-col_pos  = 50.
+*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'DATA' CHANGING cs_fcat = ls_fcat ).
+*          ls_fcat-tech     = gc_x.
+*
+*        WHEN 'FILESIZE'.
+*          ls_fcat-col_pos  = 60.
+*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'DATA' CHANGING cs_fcat = ls_fcat ).
+*          ls_fcat-no_out     = gc_x.
+*
+*        WHEN 'WAERK'.
+*          ls_fcat-col_pos  = 70.
+*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'CURRENCY' CHANGING cs_fcat = ls_fcat ).
+*
+*        WHEN 'AMOUNT'.
+*          ls_fcat-col_pos  = 80.
+*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'AMOUNT' CHANGING cs_fcat = ls_fcat ).
+
+
+*        WHEN 'VMODE'.
+*          ls_fcat-no_out   = gc_x.
+*          ls_fcat-col_pos  = 0.
+*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'MODE' CHANGING cs_fcat = ls_fcat ).
+
+**######################################################################*
+        WHEN OTHERS.
+          ls_fcat-tech   = gc_x.
+
+**######################################################################*
+      ENDCASE.
+*
+      MODIFY ct_fcat1 FROM ls_fcat.
+    ENDLOOP.
+    ls_fcat-edit = gc_x.
+    MODIFY ct_fcat1 FROM ls_fcat TRANSPORTING edit WHERE key = ' ' AND no_out = ' '.
+    ls_fcat-edit = ' '.
+    MODIFY ct_fcat1 FROM ls_fcat TRANSPORTING edit WHERE fieldname CP '*_NM'.
+  ENDMETHOD.
+
   METHOD constructor.
     super->constructor(
          EXPORTING
@@ -49,6 +227,8 @@ CLASS lcl_scr0100 IMPLEMENTATION.
         leave( ).
       WHEN gc_function_code_cancel.
         LEAVE PROGRAM.
+      WHEN 'ADMIN'.
+        CALL SELECTION-SCREEN 2000 STARTING AT 10 10 ENDING AT 120 20.
       WHEN 'REFRESH'.
         DATA : lt_expand TYPE lvc_t_nkey.
         CALL METHOD go_tree_assist1->redraw( CHANGING ct_expand = lt_expand ).
@@ -222,18 +402,18 @@ CLASS lcl_scr0100 IMPLEMENTATION.
 
       CREATE OBJECT go_event
         EXPORTING
-          i_gubn = 'SCR_TREE1'.
+          i_gubn = 'SCR0100_TREE1'.
 
       SET HANDLER go_event->handle_node_double_click
               FOR go_tree1.
 
       CALL METHOD go_tree1->get_registered_events( IMPORTING events = DATA(lt_event) ).
       APPEND VALUE #( eventid = cl_gui_column_tree=>eventid_node_double_click ) TO lt_event.
-      call method go_tree1->set_registered_events( EXPORTING events = lt_event ).
+      CALL METHOD go_tree1->set_registered_events( EXPORTING events = lt_event ).
 
       CREATE OBJECT go_event
         EXPORTING
-          i_gubn = 'SCR_GRID2'.
+          i_gubn = 'SCR0100_GRID2'.
       .
 
       "GRID1
@@ -251,8 +431,8 @@ CLASS lcl_scr0100 IMPLEMENTATION.
 
 
 
-   SET HANDLER go_event->handle_toolbar
-           FOR go_grid2.
+      SET HANDLER go_event->handle_toolbar
+              FOR go_grid2.
 *   SET HANDLER go_event->handle_user_command
 *           FOR go_tree1.
 *   SET HANDLER go_event->handle_onf4
@@ -304,7 +484,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
     IF gv_first IS INITIAL.
 *.............> Define Field category attributes
 **               -----------------------
-      CALL METHOD go_control->scr100_tree1_fcat_build(
+      CALL METHOD lcl_scr0100=>tree1_fcat_build(
         EXPORTING
           it_list1 = gt_tree1
         CHANGING

@@ -11,7 +11,7 @@
    <TPOOL>
     <item>
      <ID>R</ID>
-     <ENTRY>Implementation ( lcl_controller )</ENTRY>
+     <ENTRY>Implementation ( lcl_scr2000 )</ENTRY>
      <LENGTH>33</LENGTH>
     </item>
    </TPOOL>

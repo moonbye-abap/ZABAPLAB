@@ -109,6 +109,104 @@ CLASS lcl_module     IMPLEMENTATION.
                 .
 
   endmethod.
+  METHOD disp_f4_alv.
+
+"--------------------------------------------------------------------------------
+* lt_f4의 내용으로 [f4]를 화면에 뿌려준다.
+* Return되는 필드[SPRSL]의 결과 내용을 ALV ITAB의 [P_FIELDNAME]으로 채워준다.
+"--------------------------------------------------------------------------------
+    CONSTANTS : lc_exit type fieldname VALUE 'CONVERSION_EXIT_',
+                lc_exit1 type fieldname VALUE '_INPUT',
+                lc_exit2 type fieldname VALUE '=='.
+    DATA : lt_result   TYPE fico_typ_tab_retval,
+           lv_scrfield TYPE help_info-dynprofld,
+           lv_fname    type fieldname,
+           ls_modi     TYPE lvc_s_modi,
+           lt_fcat     type lvc_t_fcat,
+           ls_fcat     LIKE LINE OF lt_fcat,
+           ls_result   LIKE LINE OF lt_result.
+    FIELD-SYMBOLS : <lv_value> TYPE any.
+    FIELD-SYMBOLS : <ls_data> type any,
+                                <lt_tab> TYPE lvc_t_modi.
+
+  ASSIGN io_data->m_data->* TO <lt_tab>.
+
+   lt_fcat = get_fcat( it_data = it_data ).
+
+   READ TABLE lt_fcat into ls_fcat with key fieldname = i_retfield.
+   CHECK sy-subrc = 0.
+    lv_scrfield = i_scrfield.
+
+*------------------------------------------------
+* 1개만 대상인 경우 바로 리턴해 주는 로직을 추가해 준다.(Start)
+*------------------------------------------------
+* 구형코드
+*---------------
+*    CALL METHOD disp_f4(
+*      EXPORTING
+*        it_data    = it_data
+*        i_retfield = i_retfield
+*        i_scrfield = lv_scrfield
+*        i_display  = i_display
+*      IMPORTING
+*        et_result  = lt_result
+*                     ).
+
+    IF lines( it_data ) > 1.
+      CALL METHOD disp_f4(
+        EXPORTING
+          it_data    = it_data
+          i_retfield = i_retfield
+          i_scrfield = lv_scrfield
+          i_display  = i_display
+        IMPORTING
+          et_result  = lt_result
+*        CHANGING
+*          ct_fcat    = lt_fcats
+                       ).
+    ELSEIF lines( it_data ) = 1.
+     READ TABLE it_data ASSIGNING <ls_data> INDEX 1.
+      ASSIGN COMPONENT i_retfield OF STRUCTURE <ls_data> TO <lv_value>.
+      IF sy-subrc = 0.
+        ls_result-fieldval = <lv_value>.
+        APPEND ls_result TO lt_result.
+      ENDIF.
+    ENDIF.
+*------------------------------------------------
+* 1개만 대상인 경우 바로 리턴해 주는 로직을 추가해 준다. (End)
+*------------------------------------------------
+
+
+    CHECK lt_result IS NOT INITIAL.
+    READ TABLE lt_result INTO ls_result INDEX 1.
+    CHECK sy-subrc = 0.
+
+    if ls_fcat-edit_mask is not INITIAL.
+      lv_fname = ls_fcat-edit_mask.
+      REPLACE all OCCURRENCES OF lc_exit2 in lv_fname WITH ''.
+      CONCATENATE lc_exit lv_fname lc_exit1 INTO lv_fname.
+      try.
+          CALL FUNCTION lv_fname
+            EXPORTING
+              input         = ls_result-fieldval
+           IMPORTING
+             OUTPUT        = ls_modi-value
+                .
+          Catch CX_SY_DYN_CALL_ILLEGAL_FUNC.
+            return.
+      endtry.
+
+    else.
+      ls_modi-value       = ls_result-fieldval.
+    endif.
+
+
+    ls_modi-row_id      = is_row_no-row_id.
+    ls_modi-fieldname   = i_scrfield.
+    APPEND ls_modi to <lt_tab>.
+    io_data->m_event_handled = mc_x.
+
+  ENDMETHOD.
   METHOD disp_f4.
 
     DATA : lt_fields    TYPE STANDARD TABLE OF dynpread,
@@ -168,6 +266,22 @@ CLASS lcl_module     IMPLEMENTATION.
     ENDIF.
 
   ENDMETHOD.
+  METHOD set_position.
+
+    DATA : ls_row_id    TYPE lvc_s_row,
+           ls_column_id TYPE lvc_s_col,
+           ls_row_no    TYPE lvc_s_roid.
+
+    ls_row_id-index     = i_row.
+    ls_column_id-fieldname  = i_fieldname.
+
+    CALL METHOD io_alv->set_current_cell_via_id
+      EXPORTING
+        is_row_id    = ls_row_id           " Row No
+        is_column_id = ls_column_id   " Column No
+        is_row_no    = ls_row_no.        " Row No.
+
+  ENDMETHOD.
   METHOD write_scr_field.
 
     DATA : lt_data TYPE STANDARD TABLE OF dynpread.
@@ -196,7 +310,22 @@ CLASS lcl_module     IMPLEMENTATION.
     ENDIF.
 
   ENDMETHOD.
+  METHOD refresh_alv.
 
+    DATA : ls_stbl TYPE lvc_s_stbl,
+           lv_soft TYPE char01.
+    lv_soft = ls_stbl-row = ls_stbl-col  = mc_x.
+    IF i_normal IS NOT INITIAL.
+      CLEAR : lv_soft, ls_stbl.
+    ENDIF.
+    CALL METHOD io_alv->refresh_table_display
+      EXPORTING
+        is_stable      = ls_stbl
+        i_soft_refresh = lv_soft
+      EXCEPTIONS
+        finished       = 1
+        OTHERS         = 2.
+  ENDMETHOD.
   method READ_SCR_FIELD.
     DATA : lt_dyread TYPE STANDARD TABLE OF dynpread,
            lv_prog   type sy-cprog,
