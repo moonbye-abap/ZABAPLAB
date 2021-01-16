@@ -155,7 +155,7 @@ CLASS lcl_scr0200 IMPLEMENTATION.
 
 
           "DB에 반영한다.
-          CALL METHOD lcl_model=>save_tree( gt_tree1 ).
+          CALL METHOD lcl_model=>tree_save( gt_tree1 ).
         ELSE.
           "수정..
           ls_list1 = VALUE #( gt_tree1[ KEY id COMPONENTS guid = gs_tree_add-guid  ] DEFAULT ls_list1  ).
@@ -172,7 +172,7 @@ CLASS lcl_scr0200 IMPLEMENTATION.
           IF sy-subrc = 0.
             CALL METHOD go_tree1->frontend_update( ).
             "DB에 반영한다.
-            CALL METHOD lcl_model=>update_tree( ls_list1 ).
+            CALL METHOD lcl_model=>tree_update( ls_list1 ).
           ENDIF.
         ENDIF.
         leave( ).

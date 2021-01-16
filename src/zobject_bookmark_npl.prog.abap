@@ -37,13 +37,19 @@ AT SELECTION-SCREEN.
       CALL METHOD lcl_scr2000=>pai.
   ENDCASE.
 
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_usrid.
+  CALL METHOD lcl_scr2000=>pov_onf4_usrid( ).
+
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_table.
+  CALL METHOD lcl_scr2000=>pov_onf4_TABLE( ).
+
 START-OF-SELECTION.
 
 *  PERFORM fc_get_authority.
 *  PERFORM fc_get_data.
 
 
-  CALL METHOD lcl_model=>get_acc_table( EXPORTING i_usr = sy-uname CHANGING ct_acc_table = gt_acc_table ).
 
   cl_bus_abstract_screen=>get_screen(
     EXPORTING

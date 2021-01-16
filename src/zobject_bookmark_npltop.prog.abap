@@ -44,6 +44,9 @@ CONSTANTS :
   gc_z TYPE c VALUE 'Z'.
 
 DATA : gv_prg_mode TYPE c.
+DATA : gv_err_chk TYPE c,
+       gv_err_msg TYPE char50.
+
 CONSTANTS :
   "Program Mode [Admin]
   gc_prg_mode_admin   TYPE c VALUE 'A',
@@ -98,7 +101,8 @@ TYPES : BEGIN OF gty_s_gubn,
           text TYPE text100,
         END OF gty_s_gubn.
 
-DATA : gt_acc_table TYPE gty_t_acc_table.
+DATA : gt_acc_table TYPE gty_t_acc_table,
+       gs_acc_table LIKE LINE OF gt_acc_table.
 DATA : go_dock  TYPE REF TO cl_gui_docking_container,
        go_left  TYPE REF TO cl_gui_container,
        go_right TYPE REF TO cl_gui_container,
@@ -160,7 +164,7 @@ DATA : gs_tree_add TYPE gty_s_tree_add .
 TYPES : BEGIN OF gty_s_list3.
           INCLUDE TYPE zobjectbook.
           INCLUDE TYPE ycl_commons=>gty_s_incl_common.
- TYPES : usrid_nm type char30,
+          TYPES : usrid_nm TYPE char30,
         END OF gty_s_list3,
         gty_t_list3 TYPE STANDARD TABLE OF gty_s_list3.
 
@@ -172,8 +176,13 @@ DATA : go_grid3 TYPE REF TO cl_gui_alv_grid,
        gs_vari3 TYPE disvariant,
        gs_prnt3 TYPE lvc_s_prnt,
        gt_sort3 TYPE lvc_t_sort.
-DATA : gt_list3 TYPE gty_t_list3.
+DATA : gt_list3        TYPE gty_t_list3,
+       gt_list3_delete TYPE gty_t_list3.
 SELECTION-SCREEN BEGIN OF SCREEN 2000.
+PARAMETERS : p_usrid TYPE v_usr_name-bname,
+             p_table TYPE zobjectbook-name
+             .
+
 SELECTION-SCREEN END OF SCREEN 2000.
 
 *&---------------------------------------------------------------------*
@@ -272,7 +281,11 @@ CLASS lcl_module     DEFINITION.
     CLASS-METHODS commit
       IMPORTING
         !i_wait TYPE bapita-wait DEFAULT 'X' .
-
+    CLASS-METHODS ask_question_input
+      IMPORTING
+        !i_question TYPE c
+      EXPORTING
+        !e_input    TYPE char50 .
     CLASS-METHODS get_excl_buttons
       RETURNING
         VALUE(rt_excl) TYPE ui_functions .
@@ -326,7 +339,8 @@ ENDCLASS.
 CLASS lcl_scr2000 DEFINITION.
   PUBLIC SECTION.
     CLASS-METHODS :
-
+      pov_onf4_usrid,
+      pov_onf4_table,
       pbo,
       grid3_event_data_changed
         IMPORTING
@@ -373,16 +387,37 @@ CLASS lcl_model DEFINITION.
   PUBLIC SECTION.
 
     CLASS-METHODS :
-      save_tree
+      tree_save
         IMPORTING
           it_tree TYPE gty_t_tree,
-      update_tree
+      tree_update
         IMPORTING
           is_tree TYPE gty_s_tree,
-      get_acc_table
-        IMPORTING i_usr        TYPE sy-uname
-        CHANGING  ct_acc_table TYPE gty_t_acc_table,
-      get_nodes
+      seltable_select
+        IMPORTING
+                  i_name   TYPE zobjectbook-name
+        CHANGING  ct_table TYPE STANDARD TABLE,
+      seltable_delete
+        IMPORTING it_table  TYPE STANDARD TABLE
+        EXPORTING e_err_chk TYPE char01,
+
+      acctable_select
+        CHANGING ct_acc_table TYPE gty_t_list3,
+      acctable_select_single
+        IMPORTING
+          i_uname      TYPE sy-uname
+          i_name       TYPE zobjectbook-name
+        RETURNING
+          VALUE(r_rtn) TYPE zobjectbook,
+      acctable_delete
+        IMPORTING it_acc_table TYPE gty_t_list3
+        EXPORTING
+                  e_err_chk    TYPE char01,
+      acctable_save
+        EXPORTING
+                  e_err_chk    TYPE char01
+        CHANGING  ct_acc_table TYPE gty_t_list3,
+      tree_select
         IMPORTING i_usr    TYPE sy-uname
         CHANGING  ct_nodes TYPE gty_t_tree.
 
@@ -484,18 +519,31 @@ CLASS lcl_scr0100 DEFINITION
     METHODS pbo_begin REDEFINITION.
 
     CLASS-METHODS :
-      grid2_node_double_click
+      tree1_event_node_double_click
         IMPORTING
           node_key TYPE lvc_nkey
 
         ,
-
+      grid2_set_style
+        IMPORTING
+          it_fcat TYPE lvc_t_fcat
+        CHANGING
+          cs_list TYPE any OPTIONAL
+          ct_list TYPE STANDARD TABLE OPTIONAL
+        ,
       grid2_event_toolbar
         IMPORTING
           p_object      TYPE REF TO cl_alv_event_toolbar_set
           p_interactive TYPE char01
         ,
-
+      grid2_event_user_command
+        IMPORTING
+          i_ucomm TYPE sy-ucomm
+        ,
+      grid2_fcat_build
+        CHANGING
+          ct_fcat TYPE lvc_t_fcat
+        ,
       tree1_fcat_build
         IMPORTING
           it_list1 TYPE gty_t_tree

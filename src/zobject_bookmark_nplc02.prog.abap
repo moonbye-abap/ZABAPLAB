@@ -68,6 +68,7 @@ CLASS lcl_scr2000 IMPLEMENTATION.
 *######################################################################*
     LOOP AT ct_fcat INTO ls_fcat.
       CASE ls_fcat-fieldname.
+        WHEN 'VMODE'.
         WHEN 'USRID'.
           ls_fcat-col_pos  = 10.
           ls_fcat-key      = gc_x.
@@ -161,19 +162,78 @@ CLASS lcl_scr2000 IMPLEMENTATION.
   METHOD grid3_create_container.
     CREATE OBJECT go_dock3
       EXPORTING
-        repid     = sy-repid
-        dynnr     = sy-dynnr
-        side      = go_dock3->dock_at_top
-*       ratio     = 20.
-        extension = 3000.
-
+        repid = sy-repid
+        dynnr = sy-dynnr
+        side  = go_dock3->dock_at_bottom
+        ratio = 80
+*       extension = 3000.
+      .
 * # ALV GRID ##
     CREATE OBJECT go_grid3
       EXPORTING
 *       i_shellstyle = ctld_ws_thickframe
         i_parent = go_dock3.
   ENDMETHOD.
+
+  METHOD pov_onf4_usrid.
+    DATA : lv_value TYPE char50.
+    DATA(lv_rtn) = ycl_commons=>read_scr_field( i_fieldname = 'P_USRID' ).
+    IF lv_rtn IS INITIAL.
+      lv_value = '%'.
+    ELSE.
+      lv_value = lv_rtn.
+    ENDIF.
+    SELECT bname AS usrid,
+           name_first,
+           name_last,
+           name_text
+      INTO TABLE @DATA(lt_f4_user)
+      FROM v_usr_name
+     WHERE bname LIKE @lv_value.
+
+    CALL METHOD ycl_commons=>disp_f4_and_pai(
+        it_data    = lt_f4_user
+        i_retfield = 'USRID'
+        i_scrfield = 'P_USRID'
+*       i_display  = 'X'
+      ).
+
+
+  ENDMETHOD.
+  METHOD pov_onf4_table.
+    DATA : lv_value TYPE char50.
+    DATA(lv_rtn) = ycl_commons=>read_scr_field( i_fieldname = 'P_TABLE' ).
+    IF lv_rtn IS INITIAL.
+      lv_value = '%'.
+    ELSE.
+      lv_value = lv_rtn.
+    ENDIF.
+
+    SELECT  a~tabname ,
+            b~tabclass,
+            a~ddtext
+      INTO TABLE @DATA(lt_f4_table)
+      FROM dd02t AS a INNER JOIN dd02l AS b
+        ON a~tabname  = b~tabname
+       AND a~as4local = b~as4local
+       AND a~as4vers  = b~as4vers
+     WHERE a~ddlanguage = @sy-langu
+       AND a~tabname LIKE @lv_value
+       AND b~tabclass IN ( 'TRANSP' , 'VIEW' )
+      .
+
+
+    CALL METHOD ycl_commons=>disp_f4_and_pai(
+        it_data    = lt_f4_table
+        i_retfield = 'TABNAME'
+        i_scrfield = 'P_TABLE'
+*       i_display  = 'X'
+      ).
+
+
+  ENDMETHOD.
   METHOD pbo.
+    SET PF-STATUS 'PF_0100'.
     IF go_dock3 IS INITIAL.
 *   # create container object
       CALL METHOD grid3_create_container( ).
@@ -186,10 +246,35 @@ CLASS lcl_scr2000 IMPLEMENTATION.
 *
 *   # ALV Grid Display             (Display Screen)
       CALL METHOD grid3_display( ).
+    ELSE.
+      lcl_module=>refresh_alv( EXPORTING io_alv = go_grid3 ).
     ENDIF.
   ENDMETHOD.
   METHOD pai.
+    DATA : lt_filter TYPE lvc_t_filt.
+    "사용자가 입력한 조건으로 FILTER를 실행한다.
+    IF p_usrid IS NOT INITIAL.
+      lt_filter = VALUE #(
+            ( fieldname = 'USRID' sign = 'I' option = 'CP' low = p_usrid )
+            ).
+    ENDIF.
+    IF p_table IS NOT INITIAL.
+      lt_filter = VALUE #( BASE  lt_filter
+            ( fieldname = 'NAME' sign = 'I' option = 'CP' low = P_TABLE )
+            ).
 
+    ENDIF.
+    CALL METHOD go_grid3->set_filter_criteria
+      EXPORTING
+        it_filter = lt_filter
+*      EXCEPTIONS
+*       no_fieldcatalog_available = 1
+*       others    = 2
+      .
+    IF sy-subrc <> 0.
+*     Implement suitable error handling here
+    ENDIF.
+    lcl_module=>refresh_alv( EXPORTING io_alv = go_grid3 i_normal = gc_x ).
   ENDMETHOD.
   METHOD grid3_event_user_command.
     DATA : lv_ans TYPE c.
@@ -204,13 +289,41 @@ CLASS lcl_scr2000 IMPLEMENTATION.
         lv_pos   = lines( gt_list3 ) + 1.
         DO lv_lines TIMES.
           ls_list3-vmode = gc_alv_mode_append.
+          ls_list3-type  = gc_m.
 *          PERFORM fc_set_style CHANGING ls_list3.
           APPEND ls_list3 TO gt_list3.
         ENDDO.
         CALL METHOD lcl_module=>refresh_alv( io_alv = go_grid3 ).
-        CALL METHOD lcl_module=>set_position( io_alv = go_grid3 i_row = lv_pos i_fieldname = 'WERKS' ).
-      WHEN 'DELETE'.
+        CALL METHOD lcl_module=>set_position( io_alv = go_grid3 i_row = lv_pos i_fieldname = 'USRID' ).
+      WHEN 'DEL_LINE'.
+        lv_ans = lcl_module=>ask_question( EXPORTING i_question = '삭제 하시겠습니까??'  ).
+        CHECK lv_ans = '1'.
+        DATA : lt_row TYPE lvc_t_row,
+               ls_row LIKE LINE OF lt_row.
+        CALL METHOD go_grid3->get_selected_rows
+          IMPORTING
+            et_index_rows = lt_row.
+        LOOP AT lt_row INTO ls_row.
+          READ TABLE gt_list3 INTO ls_list3 INDEX ls_row-index.
+          CHECK sy-subrc = 0.
+          IF ls_list3-vmode <> gc_alv_mode_append.
+*            ls_list3-zdel    = gc_x.
+            APPEND ls_list3 TO gt_list3_delete.
+          ENDIF.
+          ls_list3-vmode = gc_alv_mode_delete.
+          MODIFY gt_list3 FROM ls_list3 INDEX ls_row-index TRANSPORTING vmode .
+        ENDLOOP.
+        DELETE gt_list3 WHERE vmode = gc_alv_mode_delete.
+        CALL METHOD lcl_module=>refresh_alv( io_alv = go_grid3 ).
+        CALL METHOD lcl_model=>acctable_delete( EXPORTING it_acc_table = gt_list3_delete ).
+        CLEAR :  gt_list3_delete.
       WHEN 'SAVE'.
+        lv_ans = lcl_module=>ask_question( i_question = '저장 하시겠습니까?' ).
+        CHECK lv_ans = gc_1.
+        CALL METHOD lcl_model=>acctable_save( IMPORTING e_err_chk = gv_err_chk CHANGING ct_acc_table = gt_list3 ).
+        CHECK gv_err_chk = 0.
+        MESSAGE s000 WITH '저장하였습니다.'.
+        lcl_module=>refresh_alv( EXPORTING io_alv = go_grid3 ).
     ENDCASE.
   ENDMETHOD.
   METHOD grid3_event_data_changed.

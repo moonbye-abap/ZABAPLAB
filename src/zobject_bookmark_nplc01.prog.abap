@@ -109,6 +109,27 @@ CLASS lcl_module     IMPLEMENTATION.
                 .
 
   endmethod.
+  METHOD ask_question_input.
+    DATA : lv_answer TYPE spop-varvalue1.
+    DATA : lv_ans    type c.
+
+    CALL FUNCTION 'POPUP_TO_GET_ONE_VALUE'
+      EXPORTING
+        textline1   = i_question
+*       TEXTLINE2   = ' '
+*       TEXTLINE3   = ' '
+        titel       = sy-cprog
+        valuelength = 50
+      IMPORTING
+        answer      = lv_ans
+        value1      = lv_answer
+         EXCEPTIONS
+       TITEL_TOO_LONG       = 1
+       OTHERS      = 2
+      .
+    e_input = lv_answer.
+
+  ENDMETHOD.
   METHOD disp_f4_alv.
 
 "--------------------------------------------------------------------------------

@@ -19,7 +19,7 @@ CLASS lcl_event IMPLEMENTATION.
   METHOD handle_node_double_click.
     CASE mv_gubn.
       WHEN 'SCR0100_TREE1'.
-        CALL METHOD lcl_scr0100=>grid2_node_double_click( node_key = node_key ).
+        CALL METHOD lcl_scr0100=>tree1_event_node_double_click( node_key = node_key ).
     ENDCASE.
 
   ENDMETHOD.
@@ -29,6 +29,8 @@ CLASS lcl_event IMPLEMENTATION.
     CASE mv_gubn.
       WHEN 'SCR2000_GRID3'.
         CALL METHOD lcl_scr2000=>grid3_event_user_command( i_ucomm = e_ucomm ).
+      WHEN 'SCR0100_GRID2'.
+        CALL METHOD lcl_scr0100=>grid2_event_user_command( i_ucomm = e_ucomm ).
     ENDCASE.
   ENDMETHOD.
 *======= Toolbar Implementation

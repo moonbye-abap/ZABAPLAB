@@ -544,9 +544,33 @@
      <LENGTH>24</LENGTH>
     </item>
     <item>
+     <ID>I</ID>
+     <KEY>E06</KEY>
+     <ENTRY>삭제시 오류가 발생하였습니다.</ENTRY>
+     <LENGTH>26</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>S01</KEY>
+     <ENTRY>저장하였습니다.</ENTRY>
+     <LENGTH>18</LENGTH>
+    </item>
+    <item>
      <ID>R</ID>
      <ENTRY>OBJECT BOOKMARKER FOR NPL</ENTRY>
      <LENGTH>25</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_TABLE</KEY>
+     <ENTRY>TABLE</ENTRY>
+     <LENGTH>15</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_USRID</KEY>
+     <ENTRY>USER ID</ENTRY>
+     <LENGTH>15</LENGTH>
     </item>
    </TPOOL>
   </asx:values>
