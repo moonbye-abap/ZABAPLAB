@@ -260,7 +260,7 @@ CLASS lcl_scr2000 IMPLEMENTATION.
     ENDIF.
     IF p_table IS NOT INITIAL.
       lt_filter = VALUE #( BASE  lt_filter
-            ( fieldname = 'NAME' sign = 'I' option = 'CP' low = P_TABLE )
+            ( fieldname = 'NAME' sign = 'I' option = 'CP' low = p_table )
             ).
 
     ENDIF.
@@ -347,7 +347,8 @@ CLASS lcl_scr2000 IMPLEMENTATION.
         INTO TABLE @DATA(lt_table)
         FROM dd02t AS a
        FOR ALL ENTRIES IN @lr_table
-      WHERE a~tabname =  @lr_table-low
+      WHERE ddlanguage = @sy-langu
+        AND a~tabname =  @lr_table-low
         .
       SORT lt_table BY tabname.
     ENDIF.
