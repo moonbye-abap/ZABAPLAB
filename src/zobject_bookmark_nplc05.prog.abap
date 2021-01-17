@@ -58,14 +58,14 @@ CLASS lcl_scr0100 IMPLEMENTATION.
 
     gs_acc_table = lcl_model=>acctable_select_single( i_uname = sy-uname i_name = ls_tree1-name ).
     IF gs_acc_table-name = 'ZOBJECTBOOK'.
-      clear : gs_acc_table-zcreate ,gs_acc_table-zupdate, gs_acc_table-zdelete.
-    endif.
+      CLEAR : gs_acc_table-zcreate ,gs_acc_table-zupdate, gs_acc_table-zdelete.
+    ENDIF.
     IF gs_acc_table-zread = gc_x.
       lcl_model=>seltable_select( EXPORTING i_name = ls_tree1-name CHANGING ct_table = <gt_list2> ).
     ENDIF.
     gs_layo2-col_opt   = space.
     CALL METHOD grid2_set_style( EXPORTING it_fcat = gt_fcat2 CHANGING ct_list = <gt_list2> ).
-    gs_layo2-grid_title = | { ls_tree1-name } ({ ls_tree1-description }) / { LINES( <gt_list2> ) }|.
+    gs_layo2-grid_title = | { ls_tree1-name } ({ ls_tree1-description }) / { lines( <gt_list2> ) }|.
     CALL METHOD go_grid2->set_table_for_first_display
       EXPORTING
         is_layout            = gs_layo2
@@ -141,7 +141,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           CHECK sy-subrc = 0.
           APPEND <ls_list2> TO <lt_list2>.
         ENDLOOP.
-        CALL METHOD lcl_model=>seltable_delete( EXPORTING it_table = <lt_list2> IMPORTING e_err_chk = gv_err_chk e_err_msg = gv_err_msg  ).
+        CALL METHOD lcl_model=>seltable_delete( EXPORTING it_table = <lt_list2> IMPORTING e_err_chk = gv_err_chk e_err_msg = gv_err_msg ).
         IF gv_err_chk IS INITIAL.
           LOOP AT lt_index INTO ls_index.
             READ TABLE <gt_list2> ASSIGNING <ls_list2> INDEX ls_index-index.
@@ -157,9 +157,9 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           MESSAGE s000 WITH gv_err_msg DISPLAY LIKE gc_e.
         ENDIF.
       WHEN 'SEL_SAVE'.
-        CALL METHOD lcl_model=>seltable_SAVE( EXPORTING it_table = <gt_list2> IMPORTING e_err_chk = gv_err_chk e_err_msg = gv_err_msg ).
+        CALL METHOD lcl_model=>seltable_save( EXPORTING it_table = <gt_list2> IMPORTING e_err_chk = gv_err_chk e_err_msg = gv_err_msg ).
         IF gv_err_chk IS INITIAL.
-          clear <ls_list2>.
+          CLEAR <ls_list2>.
           lv_where = | VMODE > ' ' |.
           MODIFY <gt_list2> FROM <ls_list2> TRANSPORTING ('VMODE') WHERE (lv_where).
           CALL METHOD grid2_set_style( EXPORTING it_fcat = gt_fcat2 CHANGING ct_list = <gt_list2> ).
@@ -351,8 +351,10 @@ CLASS lcl_scr0100 IMPLEMENTATION.
       WHEN gc_function_code_cancel.
         LEAVE PROGRAM.
       WHEN 'ADMIN'.
-        CALL METHOD lcl_model=>acctable_select( CHANGING ct_acc_table = gt_list3 ).
-        CALL SELECTION-SCREEN 2000 STARTING AT 10 10 ENDING AT 120 20.
+        IF sy-tcode = 'ZOBJECT_BOOKMARKA'.
+          CALL METHOD lcl_model=>acctable_select( CHANGING ct_acc_table = gt_list3 ).
+          CALL SELECTION-SCREEN 2000 STARTING AT 10 10 ENDING AT 120 20.
+        ENDIF.
       WHEN 'REFRESH'.
         DATA : lt_expand TYPE lvc_t_nkey.
         CALL METHOD go_tree_assist1->redraw( CHANGING ct_expand = lt_expand ).
@@ -576,12 +578,6 @@ CLASS lcl_scr0100 IMPLEMENTATION.
       gs_layo1          =  lcl_module=>get_layout( it_tab  = gt_tree1 ).
       gs_vari1-report   =  lcl_module=>get_variant( i_name = 'go_tree1' ).
 *
-*    IF gv_prg_mode <> gc_prg_mode_display.
-*      PERFORM fc_set_style_base    USING   gt_fcat2
-*                                CHANGING  gt_style_append.
-*    ENDIF.
-
-
 
     ENDIF.
   ENDMETHOD.
