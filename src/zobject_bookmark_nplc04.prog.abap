@@ -8,13 +8,6 @@ CLASS lcl_event IMPLEMENTATION.
     CALL METHOD super->constructor( ).
     mv_gubn = i_gubn.
   ENDMETHOD.
-  METHOD handle_hotspot_click.
-    CASE mv_gubn.
-      WHEN 'SCR_0100'.
-*     perform handle_hotspot_click1_1   using e_row_id
-*                                             e_column_id.
-    ENDCASE.
-  ENDMETHOD.
 
   METHOD handle_node_double_click.
     CASE mv_gubn.
@@ -42,14 +35,7 @@ CLASS lcl_event IMPLEMENTATION.
         CALL METHOD lcl_scr2000=>grid3_event_toolbar( p_object = e_object p_interactive = e_interactive ).
     ENDCASE.
   ENDMETHOD.                    "handle_hotspot_click1_1
-*======= Toolbar Implementation
-  METHOD handle_data_changed_finished.
-    CASE mv_gubn.
-      WHEN 'SCR_0200'.
-*        PERFORM handle_data_changed_finished  USING e_modified
-*                                                     et_good_cells.
-    ENDCASE.
-  ENDMETHOD.                    "handle_hotspot_click1_1
+
 *======= Toolbar Implementation
   METHOD handle_data_changed.
     CASE mv_gubn.
@@ -83,22 +69,7 @@ CLASS lcl_event IMPLEMENTATION.
             e_display     = e_display.
     ENDCASE.
   ENDMETHOD.                    "handle_hotspot_click1_1
-*======= Toolbar Implementation
-  METHOD handle_button_click.
-    CASE mv_gubn.
-      WHEN 'SCR_0200'.
-*        CALL METHOD lcl_controller=>scr100_grid2_toolbar( p_object = p_object p_interactive = p_interactive ).
-*                                                  es_row_no.
-    ENDCASE.
-  ENDMETHOD.                    "handle_hotspot_click1_1
 
-  METHOD handle_double_click.
-    CASE mv_gubn.
-      WHEN 'SCR_GRID1'.
-        MESSAGE s001 WITH 'dc'.
-*        PERFORM handle_button_click1        USING es_col_id
-*                                                  es_row_no.
-    ENDCASE.
-  ENDMETHOD.                    "handle_hotspot_click1_1
+
 
 ENDCLASS.

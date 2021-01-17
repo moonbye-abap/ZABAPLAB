@@ -10,11 +10,6 @@ CLASS lcl_model IMPLEMENTATION.
     CREATE OBJECT lo_module.
     DATA(lt_select) = lo_module->get_fields( i_struc = 'ZOBJECTBOOK' ).
 
-*    SELECT *
-*      INTO TABLE @DATA(lt_1)
-*      FROM zobjectbook.
-*    DELETE zobjectbook FROM TABLE lt_1.
-
     SELECT (lt_select)
       INTO CORRESPONDING FIELDS OF TABLE ct_nodes
       FROM zobjectbook
@@ -91,6 +86,47 @@ CLASS lcl_model IMPLEMENTATION.
       r_rtn-name = i_name.
     ENDIF.
   ENDMETHOD.
+  METHOD seltable_save.
+    FIELD-SYMBOLS : <lt_list> TYPE STANDARD TABLE,
+                    <ls_list> TYPE any.
+    DATA : lt_list TYPE REF TO data,
+           ls_list TYPE REF TO data.
+    CREATE DATA lt_list TYPE STANDARD TABLE OF (gs_acc_table-name).
+    CREATE DATA ls_list TYPE (gs_acc_table-name).
+    ASSIGN lt_list->* TO <lt_list>.
+    ASSIGN ls_list->* TO <ls_list>.
+
+    LOOP AT it_table ASSIGNING FIELD-SYMBOL(<ls_table>).
+      ASSIGN COMPONENT 'VMODE' OF STRUCTURE <ls_table> TO FIELD-SYMBOL(<lv_vmode>).
+      CHECK sy-subrc = 0.
+      CHECK <lv_vmode> <> space.
+
+      <ls_list> = CORRESPONDING #( <ls_table> ).
+      APPEND <ls_list> TO <lt_list>.
+    ENDLOOP.
+    if <lt_list> is INITIAL.
+      e_err_chk = gc_x.
+      e_err_msg = text-e08.
+      return.
+    endif.
+    TRY.
+        MODIFY (gs_acc_table-name) FROM TABLE <lt_list>.
+      CATCH cx_sy_dynamic_osql_semantics INTO DATA(lo_err).
+        e_err_chk = gc_x.
+        sy-subrc = 4.
+    ENDTRY.
+    IF sy-subrc = 0.
+      lcl_module=>commit( ).
+    ELSE.
+      e_err_chk = gc_x.
+      e_err_msg = TEXT-e07.
+      IF lo_err IS NOT INITIAL.
+        e_err_msg =  lo_err->msgtext.
+      ENDIF.
+      ROLLBACK WORK.
+    ENDIF.
+
+  ENDMETHOD.
   METHOD seltable_delete.
     FIELD-SYMBOLS : <lt_list> TYPE STANDARD TABLE,
                     <ls_list> TYPE any.
@@ -109,13 +145,25 @@ CLASS lcl_model IMPLEMENTATION.
       <ls_list> = CORRESPONDING #( <ls_table> ).
       APPEND <ls_list> TO <lt_list>.
     ENDLOOP.
-    DELETE (gs_acc_table-name) FROM TABLE <lt_list>.
+
+    TRY.
+        DELETE (gs_acc_table-name) FROM TABLE <lt_list>.
+      CATCH cx_sy_dynamic_osql_semantics INTO DATA(lo_err).
+        e_err_chk = gc_x.
+        sy-subrc = 4.
+
+    ENDTRY.
     IF sy-subrc = 0.
       lcl_module=>commit( ).
     ELSE.
       e_err_chk = gc_x.
+      e_err_msg = TEXT-e06.
+      IF lo_err IS NOT INITIAL.
+        e_err_msg =  lo_err->msgtext.
+      ENDIF.
       ROLLBACK WORK.
     ENDIF.
+
 
   ENDMETHOD.
   METHOD seltable_select.

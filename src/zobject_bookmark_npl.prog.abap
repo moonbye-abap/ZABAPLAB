@@ -8,7 +8,7 @@
 *&  3) BUS Screen framework 을 적용.
 *&  4) lcl_tree_assist ( Moonbye Tree Assistant V0.1 )를 사용하여 ALV_TREE를 쉽게 제어하도록 적용.
 *&---------------------------------------------------------------------*
-REPORT zobject_bookmark_npl MESSAGE-ID ymes01.
+REPORT zobject_bookmark_npl MESSAGE-ID zmes01.
 
 INCLUDE zobject_bookmark_npltop.
 INCLUDE zobject_bookmark_nplc00.  "lcl_tree_assist ( Moonbye Tree Assistant V0.1 )
@@ -42,13 +42,9 @@ AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_usrid.
 
 
 AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_table.
-  CALL METHOD lcl_scr2000=>pov_onf4_TABLE( ).
+  CALL METHOD lcl_scr2000=>pov_onf4_table( ).
 
 START-OF-SELECTION.
-
-*  PERFORM fc_get_authority.
-*  PERFORM fc_get_data.
-
 
 
   cl_bus_abstract_screen=>get_screen(

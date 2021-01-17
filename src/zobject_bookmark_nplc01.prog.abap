@@ -130,6 +130,19 @@ CLASS lcl_module     IMPLEMENTATION.
     e_input = lv_answer.
 
   ENDMETHOD.
+  METHOD disp_f4_and_pai.
+
+    CALL METHOD disp_f4( i_retfield = i_retfield i_scrfield = i_scrfield it_data = it_data i_prog = i_prog i_display = i_display ).
+    "Enter를 강제호출 하여 [redraw]를 해준다.
+    IF i_display IS INITIAL.
+      "Screen Field가 없다는 것은 화면을 갱신하고 싶지 않은 것이므로, PBO를 호출할 필요가 없다.
+      CALL FUNCTION 'SAPGUI_SET_FUNCTIONCODE'
+        EXPORTING
+          functioncode           = mc_enter
+        EXCEPTIONS
+          function_not_supported = 1.
+    ENDIF.
+  ENDMETHOD.
   METHOD disp_f4_alv.
 
 "--------------------------------------------------------------------------------

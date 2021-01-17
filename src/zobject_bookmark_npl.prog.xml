@@ -551,8 +551,26 @@
     </item>
     <item>
      <ID>I</ID>
+     <KEY>E07</KEY>
+     <ENTRY>저장시 오류가 발생하였습니다.</ENTRY>
+     <LENGTH>26</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>E08</KEY>
+     <ENTRY>저장 대상이 존재하지 않습니다.</ENTRY>
+     <LENGTH>27</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>S01</KEY>
      <ENTRY>저장하였습니다.</ENTRY>
+     <LENGTH>18</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>S02</KEY>
+     <ENTRY>삭제하였습니다.</ENTRY>
      <LENGTH>18</LENGTH>
     </item>
     <item>

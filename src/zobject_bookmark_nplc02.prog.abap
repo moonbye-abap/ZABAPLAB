@@ -11,8 +11,8 @@ CLASS lcl_scr2000 IMPLEMENTATION.
         i_gubn = 'SCR2000_GRID3'.
     .
 *  ENDIF.
-    SET HANDLER go_event->handle_hotspot_click        "hotspot Triggered
-            FOR go_grid3.
+*    SET HANDLER go_event->handle_hotspot_click        "hotspot Triggered
+*            FOR go_grid3.
     SET HANDLER go_event->handle_toolbar
             FOR go_grid3.
     SET HANDLER go_event->handle_user_command
@@ -177,7 +177,7 @@ CLASS lcl_scr2000 IMPLEMENTATION.
 
   METHOD pov_onf4_usrid.
     DATA : lv_value TYPE char50.
-    DATA(lv_rtn) = ycl_commons=>read_scr_field( i_fieldname = 'P_USRID' ).
+    DATA(lv_rtn) = lcl_module=>read_scr_field( i_fieldname = 'P_USRID' ).
     IF lv_rtn IS INITIAL.
       lv_value = '%'.
     ELSE.
@@ -191,7 +191,7 @@ CLASS lcl_scr2000 IMPLEMENTATION.
       FROM v_usr_name
      WHERE bname LIKE @lv_value.
 
-    CALL METHOD ycl_commons=>disp_f4_and_pai(
+    CALL METHOD lcl_module=>disp_f4_and_pai(
         it_data    = lt_f4_user
         i_retfield = 'USRID'
         i_scrfield = 'P_USRID'
@@ -202,7 +202,7 @@ CLASS lcl_scr2000 IMPLEMENTATION.
   ENDMETHOD.
   METHOD pov_onf4_table.
     DATA : lv_value TYPE char50.
-    DATA(lv_rtn) = ycl_commons=>read_scr_field( i_fieldname = 'P_TABLE' ).
+    DATA(lv_rtn) = lcl_module=>read_scr_field( i_fieldname = 'P_TABLE' ).
     IF lv_rtn IS INITIAL.
       lv_value = '%'.
     ELSE.
@@ -223,7 +223,7 @@ CLASS lcl_scr2000 IMPLEMENTATION.
       .
 
 
-    CALL METHOD ycl_commons=>disp_f4_and_pai(
+    CALL METHOD lcl_module=>disp_f4_and_pai(
         it_data    = lt_f4_table
         i_retfield = 'TABNAME'
         i_scrfield = 'P_TABLE'

@@ -57,12 +57,15 @@ CLASS lcl_scr0100 IMPLEMENTATION.
     gs_vari2-report   =  lcl_module=>get_variant( i_name = 'GO_GRID2' ).
 
     gs_acc_table = lcl_model=>acctable_select_single( i_uname = sy-uname i_name = ls_tree1-name ).
-
+    IF gs_acc_table-name = 'ZOBJECTBOOK'.
+      clear : gs_acc_table-zcreate ,gs_acc_table-zupdate, gs_acc_table-zdelete.
+    endif.
     IF gs_acc_table-zread = gc_x.
       lcl_model=>seltable_select( EXPORTING i_name = ls_tree1-name CHANGING ct_table = <gt_list2> ).
     ENDIF.
     gs_layo2-col_opt   = space.
     CALL METHOD grid2_set_style( EXPORTING it_fcat = gt_fcat2 CHANGING ct_list = <gt_list2> ).
+    gs_layo2-grid_title = | { ls_tree1-name } ({ ls_tree1-description }) / { LINES( <gt_list2> ) }|.
     CALL METHOD go_grid2->set_table_for_first_display
       EXPORTING
         is_layout            = gs_layo2
@@ -76,14 +79,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
         it_fieldcatalog      = gt_fcat2[]
         it_outtab            = <gt_list2>.
 
-*
-*        IF gv_prg_mode <> gc_prg_mode_display.
-*          PERFORM fc_set_style_base    USING   gt_fcat2
-*                                    CHANGING  gt_style_append.
-*        ENDIF.
 
-*     perform handle_hotspot_click1_1   using e_row_id
-*                                             e_column_id.
   ENDMETHOD.
   METHOD grid2_event_user_command.
     FIELD-SYMBOLS : <ls_list2> TYPE any,
@@ -138,28 +134,40 @@ CLASS lcl_scr0100 IMPLEMENTATION.
       WHEN 'SEL_DELETE'.
         CALL METHOD go_grid2->get_selected_rows( IMPORTING et_index_rows = lt_index ).
         CHECK lt_index IS NOT INITIAL.
+        DATA(lv_ans) = lcl_module=>ask_question( i_question = '정말로 삭제하시겠습니까?' ).
+        CHECK lv_ans = '1'.
         LOOP AT lt_index INTO ls_index.
           READ TABLE <gt_list2> ASSIGNING <ls_list2> INDEX ls_index-index.
           CHECK sy-subrc = 0.
           APPEND <ls_list2> TO <lt_list2>.
         ENDLOOP.
-        CALL METHOD lcl_model=>seltable_delete( EXPORTING it_table = <lt_list2> IMPORTING e_err_chk = gv_err_chk ).
+        CALL METHOD lcl_model=>seltable_delete( EXPORTING it_table = <lt_list2> IMPORTING e_err_chk = gv_err_chk e_err_msg = gv_err_msg  ).
         IF gv_err_chk IS INITIAL.
           LOOP AT lt_index INTO ls_index.
             READ TABLE <gt_list2> ASSIGNING <ls_list2> INDEX ls_index-index.
             ASSIGN COMPONENT 'VMODE' OF STRUCTURE <ls_list2> TO <lv_vmode>.
             <lv_vmode> = gc_alv_mode_delete.
           ENDLOOP.
-          data : lv_where type string.
+          DATA : lv_where TYPE string.
           lv_where = | VMODE = '{ gc_alv_mode_delete }' |.
-          DELETE <gt_list2> where (lv_where).
+          DELETE <gt_list2> WHERE (lv_where).
+          lcl_module=>refresh_alv( EXPORTING io_alv = go_grid2 ).
+          MESSAGE s000 WITH TEXT-s02.
+        ELSE.
+          MESSAGE s000 WITH gv_err_msg DISPLAY LIKE gc_e.
+        ENDIF.
+      WHEN 'SEL_SAVE'.
+        CALL METHOD lcl_model=>seltable_SAVE( EXPORTING it_table = <gt_list2> IMPORTING e_err_chk = gv_err_chk e_err_msg = gv_err_msg ).
+        IF gv_err_chk IS INITIAL.
+          clear <ls_list2>.
+          lv_where = | VMODE > ' ' |.
+          MODIFY <gt_list2> FROM <ls_list2> TRANSPORTING ('VMODE') WHERE (lv_where).
+          CALL METHOD grid2_set_style( EXPORTING it_fcat = gt_fcat2 CHANGING ct_list = <gt_list2> ).
           lcl_module=>refresh_alv( EXPORTING io_alv = go_grid2 ).
           MESSAGE s000 WITH TEXT-s01.
         ELSE.
-          MESSAGE s000 WITH TEXT-e06 DISPLAY LIKE gc_e.
+          MESSAGE s000 WITH gv_err_msg DISPLAY LIKE gc_e.
         ENDIF.
-      WHEN 'SEL_SAVE'.
-
     ENDCASE.
   ENDMETHOD.
   METHOD grid2_set_style.
@@ -268,58 +276,6 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           ls_fcat-outputlen = 50.
           CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'Description' CHANGING cs_fcat = ls_fcat ).
           ls_fcat-key      = gc_x.
-
-*        WHEN 'WERKS'.
-*          ls_fcat-col_pos  = 20.
-*          ls_fcat-key      = gc_x.
-*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'PLANT' CHANGING cs_fcat = ls_fcat ).
-*
-*        WHEN 'FIELD1'.
-*          ls_fcat-col_pos  = 30.
-*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'INPUT1' CHANGING cs_fcat = ls_fcat ).
-*
-*        WHEN 'FIELD2'.
-*          ls_fcat-col_pos  = 40.
-*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'INPUT2' CHANGING cs_fcat = ls_fcat ).
-*
-*        WHEN 'SPRAS'.
-*          ls_fcat-col_pos  = 45.
-*          ls_fcat-outputlen = 5.
-*          ls_fcat-f4availabl  = gc_x.
-*          ls_fcat-convexit    = 'ISOLA'.
-*          CLEAR : ls_fcat-domname, ls_fcat-ref_table, ls_fcat-ref_field.
-*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'LANG' CHANGING cs_fcat = ls_fcat ).
-*
-*        WHEN 'SPRAS_NM'.
-*          ls_fcat-col_pos  = 46.
-*          ls_fcat-outputlen = 10.
-**        ls_fcat-edit =
-*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'LANG NAME' CHANGING cs_fcat = ls_fcat ).
-*
-*        WHEN 'DATA'.
-*          ls_fcat-col_pos  = 50.
-*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'DATA' CHANGING cs_fcat = ls_fcat ).
-*          ls_fcat-tech     = gc_x.
-*
-*        WHEN 'FILESIZE'.
-*          ls_fcat-col_pos  = 60.
-*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'DATA' CHANGING cs_fcat = ls_fcat ).
-*          ls_fcat-no_out     = gc_x.
-*
-*        WHEN 'WAERK'.
-*          ls_fcat-col_pos  = 70.
-*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'CURRENCY' CHANGING cs_fcat = ls_fcat ).
-*
-*        WHEN 'AMOUNT'.
-*          ls_fcat-col_pos  = 80.
-*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'AMOUNT' CHANGING cs_fcat = ls_fcat ).
-
-
-*        WHEN 'VMODE'.
-*          ls_fcat-no_out   = gc_x.
-*          ls_fcat-col_pos  = 0.
-*          CALL METHOD lcl_module=>set_fcat_name( EXPORTING i_name = 'MODE' CHANGING cs_fcat = ls_fcat ).
-
 **######################################################################*
         WHEN OTHERS.
           ls_fcat-tech   = gc_x.
@@ -335,15 +291,9 @@ CLASS lcl_scr0100 IMPLEMENTATION.
     MODIFY ct_fcat1 FROM ls_fcat TRANSPORTING edit WHERE fieldname CP '*_NM'.
   ENDMETHOD.
   METHOD grid2_fcat_build.
-    "-----------------------------------------
-    " Screen(100)의 Field Catalog를 생성한다.
-    "-----------------------------------------
     DATA : ls_fcat TYPE lvc_s_fcat.
 
 
-*######################################################################*
-*   FIELD Attribute Setting
-*######################################################################*
     LOOP AT ct_fcat INTO ls_fcat.
       IF ls_fcat-fieldname = 'VMODE'.
         ls_fcat-col_pos  = -1.
@@ -355,10 +305,6 @@ CLASS lcl_scr0100 IMPLEMENTATION.
       ENDIF.
       MODIFY ct_fcat FROM ls_fcat TRANSPORTING edit col_pos scrtext_s scrtext_m scrtext_l tooltip coltext.
     ENDLOOP.
-*    ls_fcat-edit = gc_x.
-*    MODIFY ct_fcat FROM ls_fcat TRANSPORTING edit WHERE key = ' ' AND no_out = ' '.
-*    ls_fcat-edit = ' '.
-*    MODIFY ct_fcat FROM ls_fcat TRANSPORTING edit WHERE fieldname CP '*_NM'.
   ENDMETHOD.
   METHOD constructor.
     super->constructor(
@@ -510,20 +456,12 @@ CLASS lcl_scr0100 IMPLEMENTATION.
         CALL METHOD go_tree1->get_selected_nodes
           CHANGING
             ct_selected_nodes = lt_node.
-*        CALL METHOD go_tree1->get_selected_item
-*          IMPORTING
-*            e_fieldname     = DATA(lv_fieldname)
-*            e_selected_node = DATA(lv_node).
 
-*       BREAK-POINT.
 
     ENDCASE.
   ENDMETHOD.
   METHOD pbo_init_create_container.
-    "Module에서의 Data선언은 Global로 인식되므로 Data선언은 모두 Class-method에서 수행해야 한다.
     IF gv_first IS INITIAL.
-      "# create container object
-
       "-----------------------------------------
       " Screen 100에 Container를 생성한다.
       "-----------------------------------------
@@ -556,22 +494,7 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           i_parent = go_right.
 
 
-      "# Define ALV event             (SET HANDLER)
-*    MODULE define_0100_event_process.
 
-*    GET REFERENCE OF go_event INTO DATA(lr_event).
-*    CALL METHOD go_control->define_0100_event_process(
-*      CHANGING
-*        co_event = lr_event
-*        co_grid1 = go_grid2
-*    ).
-*    PERFORM define_0100_event_process.
-**
-**   # Define ALV Detail attributes (Field category,LAYOUT,SORT, etc)
-*    PERFORM define_0100_grid_value.
-**
-***   # ALV Grid Display             (Display Screen)
-*    PERFORM alv_grid_display1.
     ENDIF.
   ENDMETHOD.
 
@@ -594,10 +517,6 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           i_gubn = 'SCR0100_GRID2'.
       .
 
-      "GRID1
-      SET HANDLER go_event->handle_double_click        "hotspot Triggered
-              FOR go_grid2.
-
 *  HANDLE_DATA_CHANGED events are excuted when ALV Grid data changed
       CALL METHOD go_grid2->register_edit_event
         EXPORTING
@@ -608,28 +527,10 @@ CLASS lcl_scr0100 IMPLEMENTATION.
           i_event_id = cl_gui_alv_grid=>mc_evt_modified.    "By Changed
 
 
-
       SET HANDLER go_event->handle_toolbar
               FOR go_grid2.
       SET HANDLER go_event->handle_user_command
               FOR go_grid2.
-*   SET HANDLER go_event->handle_onf4
-*           FOR go_tree1.
-* *  SET HANDLER go_event->handle_data_changed_finished
-* *          FOR go_tree1.
-*   SET HANDLER go_event->handle_data_changed
-*           FOR go_tree1.
-**
-*
-*
-* * HANDLE_DATA_CHANGED events are excuted when ALV Grid data changed
-*   CALL METHOD go_grid2->register_edit_event
-*     EXPORTING
-*       i_event_id = cl_gui_alv_grid=>mc_evt_enter.       "By Enter
-*
-*   CALL METHOD go_grid2->register_edit_event
-*     EXPORTING
-*       i_event_id = cl_gui_alv_grid=>mc_evt_modified.    "By Changed
 
 
     ENDIF.

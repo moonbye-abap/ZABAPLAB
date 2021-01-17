@@ -11,68 +11,6 @@ class lcl_tree_assist definition
 
 public section.
 
-  interfaces YIF_COMMONS .
-
-  aliases MC_A
-    for YIF_COMMONS~MC_A .
-  aliases MC_ASTR
-    for YIF_COMMONS~MC_ASTR .
-  aliases MC_BT
-    for YIF_COMMONS~MC_BT .
-  aliases MC_C
-    for YIF_COMMONS~MC_C .
-  aliases MC_CHAR
-    for YIF_COMMONS~MC_CHAR .
-  aliases MC_CP
-    for YIF_COMMONS~MC_CP .
-  aliases MC_E
-    for YIF_COMMONS~MC_E .
-  aliases MC_ENTER
-    for YIF_COMMONS~MC_ENTER .
-  aliases MC_EQ
-    for YIF_COMMONS~MC_EQ .
-  aliases MC_ESC
-    for YIF_COMMONS~MC_ESC .
-  aliases MC_GE
-    for YIF_COMMONS~MC_GE .
-  aliases MC_GT
-    for YIF_COMMONS~MC_GT .
-  aliases MC_H
-    for YIF_COMMONS~MC_H .
-  aliases MC_HYPHEN
-    for YIF_COMMONS~MC_HYPHEN .
-  aliases MC_H_LOWER
-    for YIF_COMMONS~MC_H_LOWER .
-  aliases MC_I
-    for YIF_COMMONS~MC_I .
-  aliases MC_ICON
-    for YIF_COMMONS~MC_ICON .
-  aliases MC_KIND
-    for YIF_COMMONS~MC_KIND .
-  aliases MC_LE
-    for YIF_COMMONS~MC_LE .
-  aliases MC_LEFT_BRACE
-    for YIF_COMMONS~MC_LEFT_BRACE .
-  aliases MC_LT
-    for YIF_COMMONS~MC_LT .
-  aliases MC_NB
-    for YIF_COMMONS~MC_NB .
-  aliases MC_NE
-    for YIF_COMMONS~MC_NE .
-  aliases MC_P
-    for YIF_COMMONS~MC_P .
-  aliases MC_RIGHT_BRACE
-    for YIF_COMMONS~MC_RIGHT_BRACE .
-  aliases MC_S
-    for YIF_COMMONS~MC_S .
-  aliases MC_TEXT
-    for YIF_COMMONS~MC_TEXT .
-  aliases MC_TILDE
-    for YIF_COMMONS~MC_TILDE .
-  aliases MC_VALUE
-    for YIF_COMMONS~MC_VALUE .
-  aliases MC_X
-    for YIF_COMMONS~MC_X .
 
   types:
     BEGIN OF mty_s_dragdropbag,
@@ -279,27 +217,7 @@ ENDCLASS.
 CLASS lcl_tree_assist IMPLEMENTATION.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method lcl_tree_assist->ADD_CONTEXTMENU
-* +-------------------------------------------------------------------------------------------------+
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD add_contextmenu.
-*--------------------------------------------------------------------------------
-* Tree에 Context Menu를 장착해 준다.
-*    추가된 Context Menu를 선택하면 Screen PAI로 FCODE를 넘겨준다.
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.09
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
-* mt_toolbar
-*    ---------------------------------------------------------------
-*      FCODE  , ICON            , TEXT , quickinfo , UFCODE    , is_disabled, reftoolbar
-*    ---------------------------------------------------------------
-*      APPEND , ICON_INSERT_ROW , 추가   , 추가
-*      DELETE , ICON_DELETE_ROW , 삭제   , 삭제
-*--------------------------------------------------------------------------------
-*  CALL METHOD lcl_tree_assist=>add_contextmenu( )
-*--------------------------------------------------------------------------------
     CHECK mt_toolbar IS NOT INITIAL.
 
     DATA : lo_event TYPE REF TO lcl_tree_assist.
@@ -360,43 +278,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
           illegal_event_combination = 3.
     ENDIF.
   ENDMETHOD.
-
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method lcl_tree_assist->ADD_NODE
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] I_RELAT_NODE_KEY               TYPE        LVC_NKEY
-* | [--->] I_RELATIONSHIP                 TYPE        INT4
-* | [--->] IS_OUTTAB_LINE                 TYPE        ANY(optional)
-* | [--->] IS_NODE_LAYOUT                 TYPE        LVC_S_LAYN(optional)
-* | [--->] IT_ITEM_LAYOUT                 TYPE        LVC_T_LAYI(optional)
-* | [--->] I_NODE_TEXT                    TYPE        LVC_VALUE(optional)
-* | [<---] E_NEW_NODE_KEY                 TYPE        LVC_NKEY
-* | [EXC!] RELAT_NODE_NOT_FOUND
-* | [EXC!] NODE_NOT_FOUND
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD add_node.
-*--------------------------------------------------------------------------------
-* Tree에 add_node method를 수행한다.
-*    Drag&Drop설정된 경우 각각의 Handler를 적재하여 add_node를 수행한다.
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.14
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
-*  CALL METHOD add_node
-*    EXPORTING
-*      i_relat_node_key     = <lv_upper_node>
-*      i_relationship       = cl_gui_column_tree=>relat_last_child
-*      i_node_text          = lv_node_text
-*      is_node_layout       = ls_node_layout
-*      is_outtab_line       = <ls_data>
-*    IMPORTING
-*      e_new_node_key       = lv_nkey_rtn
-*    EXCEPTIONS
-*      relat_node_not_found = 1
-*      node_not_found       = 2
-*      OTHERS               = 3.
-*--------------------------------------------------------------------------------
 
     DATA : ls_node_layout TYPE lvc_s_layn.
     ls_node_layout = is_node_layout.
@@ -406,7 +288,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
         READ TABLE mt_treeicon INTO DATA(ls_treeicon) WITH KEY gubn = <lv_gubn>.
         IF sy-subrc = 0.
           CASE ls_treeicon-isfolder .
-            WHEN mc_x.
+            WHEN gc_x.
               CALL METHOD mo_drop->get_handle
                 IMPORTING
                   handle = DATA(lv_handle).
@@ -437,36 +319,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->ADD_ONE_NODE_CHILD
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] I_RELAT_NODE_KEY               TYPE        ANY
-* | [--->] I_NODE_TEXT                    TYPE        ANY
-* | [--->] IS_OUTTAB_LINE                 TYPE        ANY
-* | [<---] E_NEW_NODE_KEY                 TYPE        LVC_NKEY
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD add_one_node_child.
-*--------------------------------------------------------------------------------
-* Tree에 단 1개의 Node를 추가해 준다.
-*    추가된 Node는 화면상으로 펼쳐지고, 추가된 Node가 focus(selected)를 갖는다.
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.14
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
-* i_relat_node_key : 상위 Node
-* i_node_text : 신규 Node의 text
-* is_outtab_line : 신규 Node의 ALV List정보
-* e_new_node_key : 신규 추가된 고유 node Key
-*--------------------------------------------------------------------------------
-*        CALL METHOD lcl_tree_assist=>add_one_node_child
-*          EXPORTING
-*            i_relat_node_key = gs_tree_add-node
-*            i_node_text      = gs_tree_add-name
-*            ls_node_layout   = ls_node_layout
-*            is_outtab_line   = ls_list1
-*          IMPORTING
-*            e_new_node_key   = DATA(lv_nkey_rtn).
-*--------------------------------------------------------------------------------
 
     FIELD-SYMBOLS : <mt_tree> type STANDARD TABLE.
     DATA : lr_data        TYPE REF TO data,
@@ -505,7 +358,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
       ASSIGN COMPONENT ms_treeinfo-fnode OF STRUCTURE <ls_data> TO FIELD-SYMBOL(<lv_node>).
       <lv_node> = lv_nkey_rtn.
 *      data(ls_data) = <mt_tree>[ lv_idx ].
-      IF ls_node_layout-isfolder = mc_x.
+      IF ls_node_layout-isfolder = gc_x.
         lt_node = VALUE #( ( lv_nkey_rtn ) ).
       ELSE.
         lt_node = VALUE #( ( i_relat_node_key ) ).
@@ -531,36 +384,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method lcl_tree_assist->ADD_TOOLBAR
-* +-------------------------------------------------------------------------------------------------+
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD add_toolbar.
-*--------------------------------------------------------------------------------
-* Tree에 Toolbar를 장착해 준다.
-*    추가된 Toolbar를 선택하면 Screen PAI로 FCODE를 넘겨준다.
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.09
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
-* mt_toolbar
-*    fcode에 [ - ]만 입력하면 Seperate 버튼을 삽입한다.
-*    Screen(100)에 Tree가 2개 이상인 경우 FCODE가 중복되면 절대로 안된다.
-*    reftoolbar는 자동으로 toolbar의 referece가 채워진다.
-*    ---------------------------------------------------------------
-*      FCODE  , ICON            , TEXT , quickinfo , UFCODE    , is_disabled, reftoolbar
-*    ---------------------------------------------------------------
-*      APPEND , ICON_INSERT_ROW , 추가   , 추가
-*      DELETE , ICON_DELETE_ROW , 삭제   , 삭제
-*      -
-*      GITA   , ICON_DELETE_ROW , 버튼들  , 버튼들
-*      GITA1  ,                  , 버튼1  , 버튼1       , GITA
-*      GITA2  ,                  , 버튼2  , 버튼2       , GITA    , 'X'
-*      GITA3  ,                  , 버튼3  , 버튼3       , GITA
-*--------------------------------------------------------------------------------
-*      CALL METHOD lcl_tree_assist=>add_toolbar( )
-*--------------------------------------------------------------------------------
     CHECK mo_tree IS NOT INITIAL.
     DATA : lo_event TYPE REF TO lcl_tree_assist.
     CREATE OBJECT lo_event
@@ -580,7 +404,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
 
     LOOP AT mt_toolbar ASSIGNING FIELD-SYMBOL(<ls_toolbar>) WHERE ufcode IS INITIAL.
       CASE <ls_toolbar>-fcode.
-        WHEN mc_hyphen.
+        WHEN '-'.
           lv_butn_type = cntb_btype_sep.
         WHEN OTHERS.
           READ TABLE mt_toolbar TRANSPORTING NO FIELDS WITH KEY ufcode = <ls_toolbar>-fcode.
@@ -605,7 +429,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
 
     "Event
     DATA(lt_toolbars) = mt_toolbar.
-    DELETE lt_toolbars WHERE fcode = mc_hyphen.
+    DELETE lt_toolbars WHERE fcode = '-'.
     GET REFERENCE OF mo_toolbar INTO DATA(lv_ref).
     ls_toolbars-reftoolbar = lv_ref->*.
     MODIFY lt_toolbars FROM ls_toolbars TRANSPORTING reftoolbar WHERE fcode > ' '.
@@ -615,62 +439,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
     SET HANDLER lo_event->handle_toolbar_dropdown FOR mo_toolbar.
     SET HANDLER lo_event->handle_toolbar_selected FOR mo_toolbar.
   ENDMETHOD.
-
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->CONSTRUCTOR
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IO_TREE                        TYPE REF TO CL_GUI_ALV_TREE(optional)
-* | [--->] IT_TREE                        TYPE REF TO DATA
-* | [--->] IS_TREEINFO                    TYPE        MTY_S_TREEINFO
-* | [--->] IT_TREEICON                    TYPE        MTY_T_TREEICON(optional)
-* | [--->] IT_TOOLBAR                     TYPE        MTY_T_TOOLBAR(optional)
-* | [--->] IT_CONTEXTMENU                 TYPE        MTY_T_TOOLBAR(optional)
-* | [--->] I_DRAGDROP                     TYPE        CHAR1 (default =' ')
-* | [--->] I_DRAGDROP_FCODE               TYPE        SY-UCOMM(optional)
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD constructor.
-*    ---------------------------------------------------------------
-*    is_treeinfo  ( add_new의 outtab_line의 핵심구조 )
-*    ---------------------------------------------------------------
-*      fmkey : FieldName( Main Key )
-*      fname : FieldName( 계층구조상에 보여져야 할 이름 )
-*      ficon : FieldName( 계층구조상에 보여져야 하는 ICON의 모양을 결정하는 정보 ) => mt_treeicon (연동)
-*      fukey : FieldName( Upper Main Key )
-*      fnode : FieldName( 계층구조상에 add_node로 추가된 이후 리턴된 Node번호를 가져야 하는 필드 )
-*    ---------------------------------------------------------------
-
-*    ---------------------------------------------------------------
-*    it_treeicon  is_treeinfo-ficon 의 값에 따라 보여져야 하는 ICON정보.
-*    ---------------------------------------------------------------
-*      GUBN   , N_IMAGE            , EXP_IMAGE               ,isfolder
-*    ---------------------------------------------------------------
-*      N      , icon_closed_folder , icon_open_folder        , X [인 항목은 Drop대상이 된다.)
-*      T      , icon_database_table , icon_database_table    , space [인 항목은 Drag대상이 된다. )
-*    ---------------------------------------------------------------
-
-*    ---------------------------------------------------------------
-*    mt_toolbar [ Toolbar ]세팅을 원하는 경우.
-*    ---------------------------------------------------------------
-*      FCODE  , ICON            , TEXT , quickinfo , UFCODE    , is_disabled, reftoolbar
-*    ---------------------------------------------------------------
-*      APPEND , ICON_INSERT_ROW , 추가   , 추가
-*      DELETE , ICON_DELETE_ROW , 삭제   , 삭제
-*      -
-*      GITA   , ICON_DELETE_ROW , 버튼들  , 버튼들
-*      GITA1  ,                  , 버튼1  , 버튼1       , GITA
-*      GITA2  ,                  , 버튼2  , 버튼2       , GITA    , 'X'
-*      GITA3  ,                  , 버튼3  , 버튼3       , GITA
-*    --------------------------------------------------------------------------------
-
-*    --------------------------------------------------------------------------------
-*     mt_contextmenu  [Context Menu구성을 원하는 경우]
-*    ---------------------------------------------------------------
-*      FCODE  , ICON            , TEXT , quickinfo , UFCODE    , is_disabled, reftoolbar
-*    ---------------------------------------------------------------
-*      APPEND , ICON_INSERT_ROW , 추가   , 추가
-*      DELETE , ICON_DELETE_ROW , 삭제   , 삭제
-*    --------------------------------------------------------------------------------
 
     mo_tree ?= io_tree.
     mt_tree = it_tree.
@@ -695,7 +464,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
       CALL METHOD mo_drag->add
         EXPORTING
           flavor     = 'movewithtree'                                    "#EC NOTEXT
-          dragsrc    = mc_x
+          dragsrc    = gc_x
           droptarget = space
           effect     = lv_effect.
 
@@ -704,7 +473,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
         EXPORTING
           flavor     = 'movewithtree'                                    "#EC NOTEXT
           dragsrc    = space
-          droptarget = mc_x
+          droptarget = gc_x
           effect     = lv_effect.
 
       CREATE OBJECT lo_event
@@ -718,29 +487,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->DELETE_SUBTREE
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IT_NODE                        TYPE        LVC_T_NKEY
-* | [<---] ET_TREE_DELETED                TYPE        STANDARD TABLE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD delete_subtree.
-*--------------------------------------------------------------------------------
-* Tree에 주어진 Node를 삭제한다. (Sub Node포함)
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.11
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
-* it_node : 삭제할 Node를 입력받는다.
-* et_tree_deleted : 삭제된 전체 Data를 리턴해 준다.
-*--------------------------------------------------------------------------------
-*        CALL METHOD lcl_tree_assist=>tree_delete_subtree
-*          EXPORTING
-*            it_node         = lt_node
-*          IMPORTING
-*            et_node_deleted = DATA(lt_node_deleted).
-*--------------------------------------------------------------------------------
 
     FIELD-SYMBOLS : <mt_tree> type STANDARD TABLE.
     DATA : lt_subs TYPE lvc_t_nkey.
@@ -779,30 +526,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->DRAW
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IT_SOURCE                      TYPE        STANDARD TABLE
-* | [<-->] CT_EXPAND                      TYPE        LVC_T_NKEY
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD draw.
-*-----------------------------------------------------------------------------------
-* Tree를 그려주는 Method이다.
-*-----------------------------------------------------------------------------------
-* 작성일 : 2021.01.11
-* 작성자 : moonbye
-*-----------------------------------------------------------------------------------
-* it_source : 화면상에 보여줄 정보를 가지고 있는 Source용 itab이다.
-* ct_expand : ROOT를 기준으로 전체를 펼친다고 가정할때 펼쳐야 하는 항목의 NODE정보이다.
-*-----------------------------------------------------------------------------------
-*  CALL METHOD lcl_tree_assist=>Draw
-*    Exporting
-*      it_source     = lt_list2   [set_table_for_first_display]의 gt_list와 다른 Local itab을 지정하는것이 맞다.
-*    Changing
-*      ct_expand    = gt_expand
-*      .
-*-----------------------------------------------------------------------------------
-
 
     DATA : lr_data        TYPE REF TO data,
            lv_node_text   TYPE lvc_value,
@@ -867,7 +591,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
     ASSIGN COMPONENT ms_treeinfo-fnode OF STRUCTURE <ls_new> TO <lv_value>.
     <lv_value> = lv_nkey_rtn.
 
-    IF lv_isfolder = mc_x.
+    IF lv_isfolder = gc_x.
       ASSIGN COMPONENT ms_treeinfo-fnode OF STRUCTURE <ls_data> TO <lv_value>.
       <lv_value> = lv_nkey_rtn.
       APPEND <lv_value> TO ct_expand.
@@ -885,38 +609,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
         ct_expand = ct_expand.
 
   ENDMETHOD.
-
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method lcl_tree_assist->DRAW_IMAGE
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IT_SOURCE                      TYPE        STANDARD TABLE
-* | [--->] IS_SOURCE                      TYPE        ANY
-* | [<-->] CS_NODE_LAYOUT                 TYPE        LVC_S_LAYN
-* | [<-->] C_ISFOLDER                     TYPE        CHAR01
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD draw_image.
-*--------------------------------------------------------------------------------
-* draw의 SubRoutine으로 해당 Node의 Image를 결정한다.
-* cl_gui_alv_tree->add_node에 사용되는 [node layout]을 결정해 준다.
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.14
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
-* it_source : 화면상에 보여줄 전체정보를 가지고 있는 ITAB이다.
-* is_source : 현재 진행중인 Structure이다.
-* ms_treeinfo :필드정보가 들어가 있다.
-* CS_NODE_LAYOUT : cl_gui_alv_tree->add_node에 넘어갸야 할 자원이다.
-* C_ISFOLDER : is_source를 엄마로 모시는 ITEM이 존재하는 경우 해당 항목이 [X]로 리턴된다.
-*--------------------------------------------------------------------------------
-*    CALL METHOD draw_image
-*      EXPORTING
-*        it_source        = <lt_data>
-*        is_source        = <ls_data>
-*      CHANGING
-*        cs_node_layout = ls_node_layout
-*        c_isfolder     = lv_isfolder.
-*--------------------------------------------------------------------------------
 
     CONSTANTS : lc_data TYPE string VALUE 'is_source-'.
     DATA : lv_fieldname TYPE string,
@@ -929,8 +622,8 @@ CLASS lcl_tree_assist IMPLEMENTATION.
 
     READ TABLE it_source REFERENCE INTO lr_data WITH KEY (ms_treeinfo-fukey) = <lv_value>.
     IF sy-subrc = 0.
-      cs_node_layout-isfolder = mc_x.
-      c_isfolder = mc_x.
+      cs_node_layout-isfolder = gc_x.
+      c_isfolder = gc_x.
     ELSE.
       CLEAR c_isfolder.
     ENDIF.
@@ -950,40 +643,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
       ENDIF.
     ENDIF.
   ENDMETHOD.
-
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method lcl_tree_assist->DRAW_RECURSIVE
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IS_UPPER                       TYPE        ANY
-* | [<---] E_ERR_CHK                      TYPE        CHAR01
-* | [<---] E_ERR_MSG                      TYPE        CHAR100
-* | [<-->] CT_SOURCE                      TYPE        STANDARD TABLE
-* | [<-->] CT_EXPAND                      TYPE        STANDARD TABLE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD draw_recursive.
-*--------------------------------------------------------------------------------
-* drawe의 SubRoutine으로 해당 Node를 정전개[Top-Down]으로 풀어준다.(재귀호출)
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.14
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
-* IS_UPPER     :정전개를 풀어야 하는 [상위정보]이다.
-* E_ERR_CHK    :순환참조등의 오류가 발생한 경우 [E]값을 가진다.
-* E_ERR_MSG    :오류멘트이다.
-* ct_source : CL_GUI_ALV_TREE->ADD_NODE가 호출된 후 고유 NODE KEY를 넣어주어 수정된다.
-* ct_expand : ROOT를 기준으로 전체를 펼친다고 가정할때 펼쳐야 하는 항목의 NODE정보이다.
-*--------------------------------------------------------------------------------
-*    CALL METHOD draw_recursive
-*      EXPORTING
-*        is_upper     = <ls_data>
-*      IMPORTING
-*        e_err_chk    = lv_err_chk
-*        e_err_msg    = lv_err_msg
-*      CHANGING
-*        ct_source      = <lt_data>
-*        ct_expand    = ct_expand.
-*--------------------------------------------------------------------------------
 
     DATA : lr_data        TYPE REF TO data,
            lr_new         TYPE REF TO data,
@@ -1037,7 +697,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
       ENDIF.
 
       IF <lv_current_self> = <lv_upper_upper>.
-        e_err_chk = mc_e.
+        e_err_chk = gc_e.
         e_err_msg = '순환참조'.
         RETURN.
       ENDIF.
@@ -1075,7 +735,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
       ASSIGN COMPONENT ms_treeinfo-fnode OF STRUCTURE <ls_data> TO <lv_value>.
       <lv_value> = lv_nkey_rtn.
 
-      IF lv_isfolder = mc_x.
+      IF lv_isfolder = gc_x.
         APPEND <lv_value> TO ct_expand.
       ENDIF.
 
@@ -1090,42 +750,12 @@ CLASS lcl_tree_assist IMPLEMENTATION.
           ct_source = ct_source
           ct_expand = ct_expand.
 
-      IF lv_err_chk = mc_e.
+      IF lv_err_chk = gc_e.
         RETURN.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
-
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Static Public Method lcl_tree_assist=>GET_FCAT
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IS_FCAT                        TYPE        LVC_S_FCAT(optional)
-* | [--->] IV_DDIC_OBJECT                 TYPE        ANY(optional)
-* | [--->] IS_DATA                        TYPE        ANY(optional)
-* | [--->] IT_DATA                        TYPE        ANY TABLE(optional)
-* | [--->] IOR_DREF                       TYPE        DATA(optional)
-* | [<-()] RT_FCAT                        TYPE        LVC_T_FCAT
-* | [EXC!] NO_STRUCTURE
-* | [EXC!] INVALID_TYPE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   method GET_FCAT.
-"--------------------------------------------------------------------------------
-* ALV에서 사용하는 FieldCatalog를 빠르게 가져올 때 사용한다.
-"--------------------------------------------------------------------------------
-* 작성일 : 2018.04.01
-* 옴겨온자. : moonbye
-"--------------------------------------------------------------------------------
-* is_fcat         :
-* iv_ddic_object  : ABAP Dictionary의 Object를 지정해 준다. 'SFLIGHT'
-* is_data         :
-* it_data         : itab을 지정해 준다. gt_list
-* ior_dref        : Data Type으로 지정된 itab을 설정할 수 있다.
-* rt_fcat         : FieldCatalog를 리턴해 준다.
-"--------------------------------------------------------------------------------
-* lt_fcat =  ME=>get_fcat( it_data = gt_list )
-* => gt_list 내용의 FieldCatalog를 리턴해라.
-"--------------------------------------------------------------------------------
 
    DATA:
       ls_fcat        TYPE lvc_s_fcat,
@@ -1622,34 +1252,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
     ENDIF.
   endmethod.
 
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->GET_NODE_TOPDOWN
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IS_TREE                        TYPE        ANY
-* | [<---] E_ERR_CHK                      TYPE        CHAR01
-* | [<---] E_ERR_MSG                      TYPE        CHAR100
-* | [<-->] CT_RETURN                      TYPE        STANDARD TABLE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD get_node_topdown.
-*--------------------------------------------------------------------------------
-* 계층형 itab[<mt_tree>]를 받아서 특정위치[is_tree ]의 밑에 붙어있는 모든 Node를 ct_return로 전달해 준다.
-*--------------------------------------------------------------------------------
-* 작성일 : 2020.01.14
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
-* is_tree : TOP의 정보이다.
-* ct_return : is_tree[TOP]을 기준으로 [자식]을 가지고 있는 [NODE]정보만을 여기에 넣어준다.
-*--------------------------------------------------------------------------------
-*  call method lcl_tree_assist=>GET_NODE_TOPDOWN
-*    EXPORTING
-*      is_tree      = ls_list2
-*    IMPORTING
-*      e_err_chk    = lv_err
-*      e_err_msg    = lv_msg
-*    Changing
-*      ct_return      = lt_list2.
-*--------------------------------------------------------------------------------
 
     DATA : lr_data    TYPE REF TO data,
            lr_data1   TYPE REF TO data,
@@ -1697,7 +1300,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
       ENDIF.
 
       IF <lv_current_self> = <lv_upper_upper>.
-        e_err_chk = mc_e.
+        e_err_chk = gc_e.
         e_err_msg = '순환참조'.
         RETURN.
       ENDIF.
@@ -1712,29 +1315,12 @@ CLASS lcl_tree_assist IMPLEMENTATION.
           e_err_msg = lv_err_msg
         CHANGING
           ct_return = ct_return.
-      IF lv_err_chk = mc_e.
+      IF lv_err_chk = gc_e.
         RETURN.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
-
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->GET_SELECTED_NODES
-* +-------------------------------------------------------------------------------------------------+
-* | [<-()] RT_NODE                        TYPE        LVC_T_NKEY
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD get_selected_nodes.
-*--------------------------------------------------------------------------------
-* tree로부터 선택되어 있는 node정보를 읽어들인다.
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.10
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
-*  mo_tree : cl_gui_alv_tree
-*--------------------------------------------------------------------------------
-*data(lt_node) = lcl_tree_assist=>get_selected_nodes(  ).
-*--------------------------------------------------------------------------------
     CALL METHOD mo_tree->get_selected_nodes
       CHANGING
         ct_selected_nodes = rt_node.
@@ -1755,22 +1341,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->HANDLE_DRAG_MULTIPLE
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] SENDER                         LIKE
-* | [--->] NODE_KEY_TABLE                 LIKE
-* | [--->] FIELDNAME                      LIKE
-* | [--->] DRAG_DROP_OBJECT               LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD handle_drag_multiple.
-*--------------------------------------------------------------------------------
-* Event Hanlder ( cl_gui_toolbar-ON_DRAG_MULTIPLE )
-* Drag&Drop의 Drag Event 전달자를 넣어준다.
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.14
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
         DATA:
           l_node_key    TYPE lvc_nkey,
           l_sflight     TYPE sflight,
@@ -1779,26 +1350,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
     mt_dragdrop_nodes = node_key_table.
     drag_drop_object->object = me. "object가 담기지 않으면 Drop이 호출되지 않는다.
   ENDMETHOD.
-
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->HANDLE_DROP
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] SENDER                         LIKE
-* | [--->] NODE_KEY                       LIKE
-* | [--->] DRAG_DROP_OBJECT               LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD handle_drop.
-*--------------------------------------------------------------------------------
-* Event Hanlder ( cl_gui_toolbar-ON_DROP )
-* Drag&Drop의 Drop Event 를 수행한다. IsFolder = ' ' 인 항목을 isFolder='X'에 Child로 옴겨진다.
-*  작업이 완료된 이후에는 어떠한 Node의 엄마가 변경되었는지를 PAI EVENT로 확인할 수 있도록 해준다.
-*  ( mt_dragdrop_nodes_change )
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.14
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
-
 
     DATA : ls_nodes                 TYPE mty_s_dragdropbag,
            ls_dragdrop_nodes_change TYPE mty_s_eventdragdrop.
@@ -1843,24 +1395,8 @@ CLASS lcl_tree_assist IMPLEMENTATION.
         function_not_supported = 1.
   ENDMETHOD.
 
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->HANDLE_ITEM_CM_REQ
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] NODE_KEY                       LIKE
-* | [--->] MENU                           LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD HANDLE_ITEM_CM_REQ.
-*--------------------------------------------------------------------------------
-* Event Hanlder ( cl_gui_toolbar-ITEM_CONTEXT_MENU_REQUEST )
-* ADD_CONTEXTMENU를 통해 등록된 정보를 item에대한 Context Menu수행시 호출된다.
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.14
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
-* In this case the standard menu is cleared.
     CALL METHOD menu->clear.
-* The next line defines one line of the context menu.
     LOOP AT mt_contextmenu INTO DATA(ls_contextmenu).
       CALL METHOD menu->add_function
         EXPORTING
@@ -1872,46 +1408,15 @@ CLASS lcl_tree_assist IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->HANDLE_ITEM_CM_SEL
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] FIELDNAME                      LIKE
-* | [--->] NODE_KEY                       LIKE
-* | [--->] FCODE                          LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD HANDLE_ITEM_CM_SEL.
-*--------------------------------------------------------------------------------
-* Event Hanlder ( cl_gui_toolbar-ITEM_CONTEXT_MENU_SELECTED )
-* Item에대한 Context Menu가 선택되면 호출된다.
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.14
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
     CALL FUNCTION 'SAPGUI_SET_FUNCTIONCODE'
       EXPORTING
         functioncode           = fcode
       EXCEPTIONS
         function_not_supported = 1.
   ENDMETHOD.
-
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->HANDLE_NODE_CM_REQ
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] NODE_KEY                       LIKE
-* | [--->] MENU                           LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD HANDLE_NODE_CM_REQ.
-*--------------------------------------------------------------------------------
-* Event Hanlder ( cl_gui_toolbar-NODE_CONTEXT_MENU_REQUEST )
-* ADD_CONTEXTMENU를 통해 등록된 정보를 Node에대한 Context Menu수행시 호출된다.
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.14
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
-* In this case the standard menu is cleared.
     CALL METHOD menu->clear.
-* The next line defines one line of the context menu.
     LOOP AT mt_contextmenu INTO DATA(ls_contextmenu).
       CALL METHOD menu->add_function
         EXPORTING
@@ -1924,44 +1429,14 @@ CLASS lcl_tree_assist IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->HANDLE_NODE_CM_SEL
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] NODE_KEY                       LIKE
-* | [--->] FCODE                          LIKE
-* | [--->] SENDER                         LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD HANDLE_NODE_CM_SEL.
-*--------------------------------------------------------------------------------
-* Event Hanlder ( cl_gui_toolbar-NODE_CONTEXT_MENU_SELECTED )
-* Node에대한 Context Menu가 선택되면 호출된다.
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.14
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
     CALL FUNCTION 'SAPGUI_SET_FUNCTIONCODE'
       EXPORTING
         functioncode           = fcode
       EXCEPTIONS
         function_not_supported = 1.
   ENDMETHOD.
-
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->HANDLE_TOOLBAR_DROPDOWN
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] FCODE                          LIKE
-* | [--->] POSX                           LIKE
-* | [--->] POSY                           LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD handle_toolbar_dropdown.
-*--------------------------------------------------------------------------------
-* Event Hanlder ( cl_gui_toolbar-DROPDOWN_CLICKED )
-* ADD_TOOLBAR를 통해 등록된 버튼들 중 Sub Button이 존재하는 경우 이 버튼을 실시간으로 보여준다.
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.09
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
 
     DATA : lo_ctmenu TYPE REF TO cl_ctmenu.
     CREATE OBJECT lo_ctmenu.
@@ -1988,21 +1463,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
         posy         = posy.
 
   ENDMETHOD.
-
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->HANDLE_TOOLBAR_SELECTED
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] FCODE                          LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD handle_toolbar_selected.
-*--------------------------------------------------------------------------------
-* Event Hanlder ( cl_gui_toolbar-FUNCTION_SELECTED )
-* ADD_TOOLBAR를 통해 등록된 버튼들 중 Sub Button이 눌려지면 SCREEN의 PAI로 전달해 준다.
-*--------------------------------------------------------------------------------
-* 작성일 : 2021.01.09
-* 작성자 : moonbye
-*--------------------------------------------------------------------------------
 
     CALL FUNCTION 'SAPGUI_SET_FUNCTIONCODE'
       EXPORTING
@@ -2011,30 +1472,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
         function_not_supported = 1.
   ENDMETHOD.
 
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->RECALC_BOTTOMUP
-* +-------------------------------------------------------------------------------------------------+
-* | [<-->] CT_TREE                        TYPE        STANDARD TABLE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD recalc_bottomup.
-*-----------------------------------------------------------------------------------
-* 계층형 itab[ct_tree]를 받아서 수치형 데이타를 누적하여 돌려준다.
-*-----------------------------------------------------------------------------------
-* 작성일 : 2021.01.14
-* 작성자 : moonbye
-*-----------------------------------------------------------------------------------
-* ct_tree : 자료가 들어있는 항목이다.
-*           (수치형 데이타들은 Level에 따라 자식의 값의 누적데이타를 가진상태로 돌려 받는다. )
-*-----------------------------------------------------------------------------------
-*  Ex. 컴퓨터 100                  =>       컴퓨터 300
-*         모니터 100                          모니터 100
-*         본체   100                          본체  100
-*-----------------------------------------------------------------------------------
-*  call method lcl_tree_assist=>TREE_RECALC_BOTTOMUP
-*    changing
-*      ct_tree      = lt_list2.
-*-----------------------------------------------------------------------------------
 
     DATA : lr_data  TYPE REF TO data,
            lr_data1 TYPE REF TO data.
@@ -2052,7 +1490,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
                     <lv_uvalue>    TYPE any.
     ASSIGN mt_tree->* TO <mt_tree>.
     lt_fcat = get_fcat( it_data = ct_tree ).
-    DELETE lt_fcat WHERE NOT ( inttype = mc_p OR inttype = mc_i ).
+    DELETE lt_fcat WHERE NOT ( inttype = gc_p OR inttype = gc_i ).
     "<lt_data_key> : ct_tree를 main key로 정렬한 itab
     CREATE DATA lr_data   LIKE ct_tree.
     ASSIGN lr_data->*   TO <lt_data_key>.
@@ -2113,31 +1551,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
     ENDLOOP.
 
   ENDMETHOD.
-
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method lcl_tree_assist->REDRAW
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IT_SOURCE                      TYPE        STANDARD TABLE(optional)
-* | [<-->] CT_EXPAND                      TYPE        LVC_T_NKEY
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD redraw.
-*-----------------------------------------------------------------------------------
-* Tree를 기존에 가지고 있는 정보 또는 주어진 정보를 바탕으로 다시그려준다.
-*-----------------------------------------------------------------------------------
-* 작성일 : 2021.01.11
-* 작성자 : moonbye
-*-----------------------------------------------------------------------------------
-* it_source(Optional) : Source로 사용할 itab 없으면 기존 정보를 가지고 다시 그린다.
-* ct_expand : ROOT를 기준으로 전체를 펼친다고 가정할때 펼쳐야 하는 항목의 NODE정보이다.
-*-----------------------------------------------------------------------------------
-*  CALL METHOD lcl_tree_assist=>ReDraw
-*    Exporting
-*      it_source     = lt_list2   [set_table_for_first_display]의 gt_list와 다른 Local itab을 지정하는것이 맞다.
-*    Changing
-*      ct_expand    = gt_expand
-*      .
-*-----------------------------------------------------------------------------------
 
     FIELD-SYMBOLS : <lt_source> TYPE STANDARD TABLE.
     IF it_source IS INITIAL.
@@ -2145,7 +1559,7 @@ CLASS lcl_tree_assist IMPLEMENTATION.
     ELSE.
       ASSIGN ('IT_SOURCE') TO <lt_source>.
     ENDIF.
-    m_redraw = mc_x.
+    m_redraw = gc_x.
     CALL METHOD draw
       EXPORTING
         it_source = <lt_source>

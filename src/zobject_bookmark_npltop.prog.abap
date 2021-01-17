@@ -45,7 +45,7 @@ CONSTANTS :
 
 DATA : gv_prg_mode TYPE c.
 DATA : gv_err_chk TYPE c,
-       gv_err_msg TYPE char50.
+       gv_err_msg TYPE char100.
 
 CONSTANTS :
   "Program Mode [Admin]
@@ -163,8 +163,11 @@ DATA : gs_tree_add TYPE gty_s_tree_add .
 
 TYPES : BEGIN OF gty_s_list3.
           INCLUDE TYPE zobjectbook.
-          INCLUDE TYPE ycl_commons=>gty_s_incl_common.
-          TYPES : usrid_nm TYPE char30,
+          TYPES :vcolor   TYPE lvc_t_scol,
+          vcelltab TYPE lvc_t_styl,
+          vmode    TYPE char1,
+          vidx     TYPE sy-tabix,
+          usrid_nm TYPE char30,
         END OF gty_s_list3,
         gty_t_list3 TYPE STANDARD TABLE OF gty_s_list3.
 
@@ -223,7 +226,6 @@ CLASS lcl_module     DEFINITION.
     CONSTANTS mc_p TYPE c VALUE 'P' ##NO_TEXT.
 
 
-
     TYPES:
       BEGIN OF gty_s_incl_common ,
         vcolor   TYPE lvc_t_scol,
@@ -255,6 +257,13 @@ CLASS lcl_module     DEFINITION.
         !i_prog        TYPE sy-cprog OPTIONAL
       RETURNING
         VALUE(r_value) TYPE char100 .
+    CLASS-METHODS disp_f4_and_pai
+      IMPORTING
+        !i_retfield TYPE dfies-fieldname
+        !i_scrfield TYPE help_info-dynprofld
+        !it_data    TYPE STANDARD TABLE
+        !i_prog     TYPE sy-cprog OPTIONAL
+        !i_display  TYPE c DEFAULT ' ' .
     CLASS-METHODS disp_f4_alv
       IMPORTING
         !it_data    TYPE STANDARD TABLE
@@ -399,7 +408,13 @@ CLASS lcl_model DEFINITION.
         CHANGING  ct_table TYPE STANDARD TABLE,
       seltable_delete
         IMPORTING it_table  TYPE STANDARD TABLE
-        EXPORTING e_err_chk TYPE char01,
+        EXPORTING e_err_chk TYPE char01
+                  e_err_msg TYPE char100,
+
+      seltable_save
+        IMPORTING it_table  TYPE STANDARD TABLE
+        EXPORTING e_err_chk TYPE char01
+                  e_err_msg TYPE char100,
 
       acctable_select
         CHANGING ct_acc_table TYPE gty_t_list3,
@@ -455,11 +470,6 @@ CLASS lcl_event DEFINITION INHERITING FROM cl_gui_object.
           et_bad_cells
           e_display,
 
-      handle_data_changed_finished
-          FOR EVENT data_changed_finished OF cl_gui_alv_grid
-        IMPORTING
-          e_modified
-          et_good_cells,
 
 
       handle_data_changed
@@ -472,33 +482,10 @@ CLASS lcl_event DEFINITION INHERITING FROM cl_gui_object.
           e_ucomm,
 
 
-      handle_button_click
-          FOR EVENT button_click OF cl_gui_alv_grid
-        IMPORTING
-          es_col_id
-          es_row_no,
-
-
-
-      handle_double_click
-                  FOR EVENT double_click OF cl_gui_alv_grid
-        IMPORTING e_row
-                  e_column
-                  es_row_no ,
-
-
       handle_node_double_click
                   FOR EVENT node_double_click OF cl_gui_alv_tree
-        IMPORTING node_key,
+        IMPORTING node_key.
 
-      handle_hotspot_click
-                  FOR EVENT hotspot_click OF cl_gui_alv_grid
-        IMPORTING e_row_id
-                  e_column_id.
-
-
-
-  PRIVATE SECTION.
 
 ENDCLASS.
 
